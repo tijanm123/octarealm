@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>OctaRealm - UFC Reality Engine</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-glow"></div>
+
+  <header class="app-header">
+    <div class="logo-area">
+      <div class="logo-orb">OR</div>
+      <div class="logo-text">
+        <h1>OctaRealm</h1>
+        <p>UFC Reality Engine • AI Fight Predictions</p>
+      </div>
+    </div>
+    <div class="header-controls">
+      <div class="status-indicator">
+        <span class="status-dot"></span>
+        <span id="live-status-text">Initializing feed...</span>
+      </div>
+      <button id="refresh-btn" class="btn btn-primary">
+        Refresh Now
+      </button>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <section class="dashboard-summary" id="predictions-section">
+      <div class="summary-card">
+        <h2>Upcoming Reality Scan</h2>
+        <p>Upcoming UFC events are scanned and evaluated in real-time using AI-style combat metrics.</p>
+        <div class="summary-metrics">
+          <div class="metric">
+            <span class="metric-label">Tracked Events</span>
+            <span id="metric-events" class="metric-value">--</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Analyzed Fights</span>
+            <span id="metric-fights" class="metric-value">--</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Last Sync</span>
+            <span id="last-updated" class="metric-value">--</span>
+          </div>
+        </div>
+      </div>
+      <div class="summary-card summary-card-right">
+        <h2>AI Prediction Engine</h2>
+        <ul class="engine-list">
+          <li>Striking: volume, accuracy, defense, damage intake</li>
+          <li>Grappling: takedowns, control, submission threats</li>
+          <li>Finishing: KO power, submission danger, decision tendencies</li>
+          <li>Momentum: recent form, streaks, performance trend</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="events-section" id="events-section">
+      <div class="section-header">
+        <h2>Upcoming UFC Events</h2>
+        <span class="section-subtitle">Tap an event to expand its fight card and see AI predictions.</span>
+      </div>
+      <div id="events-container" class="events-container">
+        <!-- Event and fight cards are injected here -->
+      </div>
+      <div id="empty-state" class="empty-state hidden">
+        <p>No events available right now. Try refreshing or check back later.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <span>OctaRealm ● Experimental UFC prediction dashboard</span>
+    <span>Live UFC cards via public MMA API • Predictions are experimental only.</span>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
+
