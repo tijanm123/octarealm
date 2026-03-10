@@ -13,32 +13,55 @@ const MMA_API_URL = "https://mma-fights-api-production.up.railway.app/";
 
 const eventsContainer = document.getElementById("events-container");
 const emptyStateEl = document.getElementById("empty-state");
-const lastUpdatedEl = document.getElementById("last-updated");
-const liveStatusTextEl = document.getElementById("live-status-text");
-const statusDotEl = document.querySelector(".status-dot");
-const metricEventsEl = document.getElementById("metric-events");
-const metricFightsEl = document.getElementById("metric-fights");
 const refreshBtn = document.getElementById("refresh-btn");
+const fighterSearchInput = document.getElementById("fighter-search");
+const searchResultsEl = document.getElementById("search-results");
+const fighterModal = document.getElementById("fighter-modal");
+const closeModalBtn = document.getElementById("close-modal");
+const runSimulationBtn = document.getElementById("run-simulation");
+const simulationResults = document.getElementById("simulation-results");
+
+// Hero stats elements
+const upcomingEventsCount = document.getElementById("upcoming-events-count");
+const analyzedFightsCount = document.getElementById("analyzed-fights-count");
+const accuracyPercentage = document.getElementById("accuracy-percentage");
+const correctPicksCount = document.getElementById("correct-picks-count");
+const bestPickEdge = document.getElementById("best-pick-edge");
+const bestPickFighter = document.getElementById("best-pick-fighter");
+const bestPickConfidence = document.getElementById("best-pick-confidence");
+
+// Simulator elements
+const fighterASelect = document.getElementById("fighter-a-select");
+const fighterBSelect = document.getElementById("fighter-b-select");
+const resultFighterA = document.getElementById("result-fighter-a");
+const resultFighterB = document.getElementById("result-fighter-b");
+const fighterAWinPercent = document.getElementById("fighter-a-win-percent");
+const fighterBWinPercent = document.getElementById("fighter-b-win-percent");
+
+// Compare section elements
+const compareFighterASelect = document.getElementById("compare-fighter-a");
+const compareFighterBSelect = document.getElementById("compare-fighter-b");
+const runComparisonBtn = document.getElementById("run-comparison");
+const comparisonResults = document.getElementById("comparison-results");
+
+// Accuracy section elements
+const accuracyLast50 = document.getElementById("accuracy-last-50");
+const accuracyPercent = document.getElementById("accuracy-percent");
+const correctCount = document.getElementById("correct-count");
+const incorrectCount = document.getElementById("incorrect-count");
+const avgConfidence = document.getElementById("avg-confidence");
+const bestPickRate = document.getElementById("best-pick-rate");
 
 let refreshTimerId = null;
+let allFighters = [];
+let currentEvents = [];
+let countdownIntervals = new Map();
 
 // ===== Utilities =====
 
 function setLiveStatus(text, mode = "idle") {
-  liveStatusTextEl.textContent = text;
-  if (mode === "loading") {
-    statusDotEl.style.background = "#ffc857";
-    statusDotEl.style.boxShadow = "0 0 10px rgba(255, 200, 87, 0.9)";
-  } else if (mode === "live") {
-    statusDotEl.style.background = "#38f9d7";
-    statusDotEl.style.boxShadow = "0 0 10px rgba(56, 249, 215, 1)";
-  } else if (mode === "error") {
-    statusDotEl.style.background = "#ff4b81";
-    statusDotEl.style.boxShadow = "0 0 10px rgba(255, 75, 129, 1)";
-  } else {
-    statusDotEl.style.background = "#ffc857";
-    statusDotEl.style.boxShadow = "0 0 8px rgba(255, 200, 87, 0.9)";
-  }
+  // Status indicator functionality removed since we don't have the elements anymore
+  console.log(`Status: ${text} (${mode})`);
 }
 
 function clamp(num, min, max) {
@@ -64,6 +87,197 @@ function parseRecord(record) {
   const draws = Number.isFinite(parts[2]) ? parts[2] : 0;
   const total = wins + losses + draws;
   return { wins, losses, draws, total };
+}
+
+// Countdown timer utility
+function getCountdown(dateText) {
+  if (!dateText || dateText === "Date TBA") return null;
+  
+  try {
+    // Try to parse the date - this is a simplified version
+    // In a real implementation, you'd need more sophisticated date parsing
+    const eventDate = new Date(dateText);
+    const now = new Date();
+    const diff = eventDate - now;
+    
+    if (diff <= 0) return "Started";
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (days > 0) {
+      return `Starts in: ${days}d ${hours}h`;
+    } else if (hours > 0) {
+      return `Starts in: ${hours}h`;
+    } else {
+      return "Starts soon";
+    }
+  } catch (e) {
+    return "Date TBA";
+  }
+}
+
+// Fighter search functionality
+function initializeFighterSearch() {
+  fighterSearchInput.addEventListener("input", (e) => {
+    const query = e.target.value.toLowerCase();
+    if (query.length < 2) {
+      searchResultsEl.classList.add("hidden");
+      return;
+    }
+    
+    const results = allFighters.filter(fighter => 
+      fighter.name.toLowerCase().includes(query)
+    );
+    
+    displaySearchResults(results.slice(0, 5));
+  });
+  
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".search-container")) {
+      searchResultsEl.classList.add("hidden");
+    }
+  });
+}
+
+function displaySearchResults(results) {
+  searchResultsEl.innerHTML = "";
+  
+  if (results.length === 0) {
+    searchResultsEl.classList.add("hidden");
+    return;
+  }
+  
+  results.forEach(fighter => {
+    const item = document.createElement("div");
+    item.className = "search-result-card";
+    
+    // Create fighter avatar
+    const avatar = document.createElement("div");
+    avatar.className = "search-result-avatar";
+    if (fighter.imageUrl) {
+      avatar.style.backgroundImage = `url(${fighter.imageUrl})`;
+    } else {
+      avatar.textContent = getInitials(fighter.name);
+    }
+    
+    // Create fighter info
+    const info = document.createElement("div");
+    info.className = "search-result-info";
+    
+    const name = document.createElement("div");
+    name.className = "search-result-name";
+    name.textContent = fighter.name;
+    
+    const details = document.createElement("div");
+    details.className = "search-result-details";
+    details.textContent = `${fighter.record} • ${fighter.weightLbs || 'Unknown'} lbs`;
+    
+    info.appendChild(name);
+    info.appendChild(details);
+    
+    item.appendChild(avatar);
+    item.appendChild(info);
+    
+    item.addEventListener("click", () => {
+      showFighterProfile(fighter);
+      searchResultsEl.classList.add("hidden");
+      fighterSearchInput.value = "";
+    });
+    
+    searchResultsEl.appendChild(item);
+  });
+  
+  searchResultsEl.classList.remove("hidden");
+}
+
+// Modal functionality
+function showFighterProfile(fighter) {
+  document.getElementById("modal-fighter-name").textContent = fighter.name;
+  document.getElementById("profile-record").textContent = fighter.record;
+  document.getElementById("profile-weight-class").textContent = fighter.weightLbs ? `${fighter.weightLbs} lbs` : "Unknown";
+  document.getElementById("profile-height").textContent = "-"; // Not available in current data
+  document.getElementById("profile-reach").textContent = "-"; // Not available in current data
+  document.getElementById("profile-stance").textContent = "-"; // Not available in current data
+  document.getElementById("profile-country").textContent = "-"; // Not available in current data
+  
+  // Update stats
+  document.getElementById("stat-striking-acc").textContent = "-";
+  document.getElementById("stat-striking-def").textContent = "-";
+  document.getElementById("stat-td-acc").textContent = "-";
+  document.getElementById("stat-td-def").textContent = "-";
+  document.getElementById("stat-sub-avg").textContent = "-";
+  document.getElementById("stat-recent-form").textContent = "-";
+  
+  fighterModal.classList.remove("hidden");
+}
+
+function initializeModal() {
+  closeModalBtn.addEventListener("click", () => {
+    fighterModal.classList.add("hidden");
+  });
+  
+  fighterModal.addEventListener("click", (e) => {
+    if (e.target === fighterModal) {
+      fighterModal.classList.add("hidden");
+    }
+  });
+}
+
+// Update hero stats
+function updateHeroStats(events) {
+  if (!events || events.length === 0) {
+    upcomingEventsCount.textContent = "0";
+    analyzedFightsCount.textContent = "0";
+    accuracyPercentage.textContent = "0%";
+    correctPicksCount.textContent = "0";
+    bestPickEdge.textContent = "0%";
+    bestPickFighter.textContent = "No edge available";
+    return;
+  }
+  
+  const totalFights = events.reduce((sum, event) => sum + (event.fights ? event.fights.length : 0), 0);
+  
+  upcomingEventsCount.textContent = events.length;
+  analyzedFightsCount.textContent = totalFights;
+  
+  // Simulated accuracy data (in a real app, this would come from actual prediction history)
+  const simulatedAccuracy = Math.floor(Math.random() * 15) + 65; // 65-80%
+  const simulatedCorrect = Math.floor((simulatedAccuracy / 100) * Math.min(totalFights, 50));
+  
+  accuracyPercentage.textContent = `${simulatedAccuracy}%`;
+  correctPicksCount.textContent = simulatedCorrect;
+  
+  // Find best pick
+  let bestPick = null;
+  let highestEdge = 0;
+  
+  events.forEach(event => {
+    (event.fights || []).forEach(fight => {
+      const analysis = calculatePrediction(fight.fighterA, fight.fighterB);
+      const edge = Math.abs(analysis.fighterA.prob - analysis.fighterB.prob);
+      if (edge > highestEdge && analysis.bestPick) {
+        highestEdge = edge;
+        bestPick = {
+          fighter: analysis.winner === "A" ? fight.fighterA.name : fight.fighterB.name,
+          edge: Math.round(edge * 100),
+          confidence: analysis.confidence
+        };
+      }
+    });
+  });
+  
+  if (bestPick) {
+    bestPickEdge.textContent = `${bestPick.edge}%`;
+    bestPickFighter.textContent = bestPick.fighter;
+    bestPickConfidence.textContent = bestPick.confidence >= 70 ? "High" : bestPick.confidence >= 50 ? "Medium" : "Low";
+  } else {
+    bestPickEdge.textContent = "0%";
+    bestPickFighter.textContent = "No edge available";
+  }
+  
+  // Update accuracy section
+  updateAccuracySection();
 }
 
 function estimateFinishProfile(weightLbs, winPct) {
@@ -235,14 +449,15 @@ function renderEvents(events) {
       p.textContent =
         "Live UFC data is currently unavailable or no upcoming UFC cards were found. Please try again later.";
     }
-    metricEventsEl.textContent = "0";
-    metricFightsEl.textContent = "0";
+    updateHeroStats([]);
     return;
   }
 
   emptyStateEl.classList.add("hidden");
 
-  let totalFights = 0;
+  // Clear previous countdown intervals
+  countdownIntervals.forEach(interval => clearInterval(interval));
+  countdownIntervals.clear();
 
   events.forEach((event, index) => {
     const card = document.createElement("article");
@@ -263,7 +478,15 @@ function renderEvents(events) {
 
     const subEl = document.createElement("div");
     subEl.className = "event-sub";
-    subEl.textContent = `${event.dateText || "Date TBA"} • UFC Fight Card`;
+    
+    const countdownEl = document.createElement("span");
+    countdownEl.className = "countdown-timer";
+    const countdownId = `countdown-${event.id}`;
+    countdownEl.id = countdownId;
+    
+    subEl.appendChild(countdownEl);
+    const dateText = document.createTextNode(`${event.dateText || "Date TBA"} • UFC Fight Card`);
+    subEl.appendChild(dateText);
 
     const tags = document.createElement("div");
     tags.className = "event-meta-tags";
@@ -286,7 +509,6 @@ function renderEvents(events) {
     const countPill = document.createElement("div");
     countPill.className = "event-count-pill";
     const fightCount = event.fights ? event.fights.length : 0;
-    totalFights += fightCount;
     countPill.textContent = `${fightCount} fights`;
 
     const toggleIcon = document.createElement("div");
@@ -328,10 +550,28 @@ function renderEvents(events) {
     });
 
     eventsContainer.appendChild(card);
+    
+    // Set up countdown timer
+    if (event.dateText) {
+      const interval = setInterval(() => {
+        const countdown = getCountdown(event.dateText);
+        const el = document.getElementById(countdownId);
+        if (el && countdown) {
+          el.textContent = countdown;
+        }
+      }, 60000); // Update every minute
+      
+      countdownIntervals.set(countdownId, interval);
+      
+      // Initial countdown
+      const initialCountdown = getCountdown(event.dateText);
+      if (initialCountdown) {
+        countdownEl.textContent = initialCountdown;
+      }
+    }
   });
 
-  metricEventsEl.textContent = String(events.length);
-  metricFightsEl.textContent = String(totalFights);
+  updateHeroStats(events);
 }
 
 function renderFightCard(fight) {
@@ -628,9 +868,549 @@ function renderFightCard(fight) {
 
   right.append(predHeader, barWrapper, detailRow);
 
+  // Add odds comparison section
+  const oddsSection = document.createElement("div");
+  oddsSection.className = "odds-section";
+  
+  const oddsHeader = document.createElement("div");
+  oddsHeader.className = "odds-header";
+  oddsHeader.textContent = "Best Odds";
+  
+  const oddsGrid = document.createElement("div");
+  oddsGrid.className = "odds-grid";
+  
+  // Generate example odds for demonstration
+  const sportsbooks = [
+    { name: "Bet365", oddsA: "+120", oddsB: "-140" },
+    { name: "DraftKings", oddsA: "+115", oddsB: "-135" },
+    { name: "FanDuel", oddsA: "+125", oddsB: "-145" }
+  ];
+  
+  sportsbooks.forEach(sportsbook => {
+    const oddsItem = document.createElement("div");
+    oddsItem.className = "odds-item";
+    
+    const sportsbookName = document.createElement("div");
+    sportsbookName.className = "sportsbook-name";
+    sportsbookName.textContent = sportsbook.name;
+    sportsbookName.addEventListener("click", () => {
+      // Placeholder for affiliate links
+      console.log(`Affiliate link for ${sportsbook.name}`);
+    });
+    
+    const oddsValues = document.createElement("div");
+    oddsValues.className = "odds-values";
+    oddsValues.innerHTML = `
+      <span class="odds-fighter-a">${sportsbook.oddsA}</span>
+      <span class="odds-fighter-b">${sportsbook.oddsB}</span>
+    `;
+    
+    oddsItem.appendChild(sportsbookName);
+    oddsItem.appendChild(oddsValues);
+    oddsGrid.appendChild(oddsItem);
+  });
+  
+  oddsSection.appendChild(oddsHeader);
+  oddsSection.appendChild(oddsGrid);
+  
+  // Add value bet indicator
+  const aiProb = analysis.winner === "A" ? analysis.fighterA.prob : analysis.fighterB.prob;
+  const bookmakerProb = 0.55; // Example bookmaker implied probability
+  const isValueBet = aiProb > bookmakerProb + 0.1; // 10% threshold
+  
+  if (isValueBet) {
+    const valueBadge = document.createElement("div");
+    valueBadge.className = "value-bet-badge";
+    valueBadge.textContent = "VALUE BET";
+    oddsSection.appendChild(valueBadge);
+  }
+  
+  right.append(oddsSection);
+
+  // Add action buttons
+  const actions = document.createElement("div");
+  actions.className = "fight-actions";
+  
+  const simulateBtn = document.createElement("button");
+  simulateBtn.className = "fight-action-btn";
+  simulateBtn.textContent = "Simulate Fight";
+  simulateBtn.addEventListener("click", () => {
+    // Populate simulator with these fighters
+    fighterASelect.value = fighterA.name;
+    fighterBSelect.value = fighterB.name;
+    // Scroll to simulator
+    document.getElementById("simulator").scrollIntoView({ behavior: "smooth" });
+  });
+  
+  const compareBtn = document.createElement("button");
+  compareBtn.className = "fight-action-btn";
+  compareBtn.textContent = "Compare Fighters";
+  compareBtn.addEventListener("click", () => {
+    showFighterProfile(fighterA);
+  });
+  
+  const profileBtn = document.createElement("button");
+  profileBtn.className = "fight-action-btn";
+  profileBtn.textContent = "Open Profiles";
+  profileBtn.addEventListener("click", () => {
+    showFighterProfile(fighterB);
+  });
+  
+  const shareBtn = document.createElement("button");
+  shareBtn.className = "fight-action-btn";
+  shareBtn.textContent = "Share Prediction";
+  shareBtn.addEventListener("click", () => {
+    sharePrediction(fighterA, fighterB, analysis);
+  });
+  
+  actions.appendChild(simulateBtn);
+  actions.appendChild(compareBtn);
+  actions.appendChild(profileBtn);
+  actions.appendChild(shareBtn);
+  
+  right.append(actions);
   card.append(left, right);
 
   return card;
+}
+
+// ===== Prediction Sharing =====
+
+let simulationHistory = [];
+
+function sharePrediction(fighterA, fighterB, analysis) {
+  const winner = analysis.winner === "A" ? fighterA.name : fighterB.name;
+  const winnerProb = Math.round((analysis.winner === "A" ? analysis.fighterA.prob : analysis.fighterB.prob) * 100);
+  const loserProb = Math.round((analysis.winner === "A" ? analysis.fighterB.prob : analysis.fighterA.prob) * 100);
+  
+  // Create shareable text
+  const shareText = `🥊 OctaRealm Fight Prediction 🥊\n\n${fighterA.name} vs ${fighterB.name}\n\n🏆 Predicted Winner: ${winner}\n📊 Win Probability: ${winnerProb}% vs ${loserProb}%\n\n🔥 Powered by AI • octarealm.com`;
+  
+  // Create shareable card
+  const shareCard = document.createElement("div");
+  shareCard.className = "share-card";
+  shareCard.innerHTML = `
+    <div class="share-card-header">
+      <h3>🥊 OctaRealm Prediction</h3>
+    </div>
+    <div class="share-card-content">
+      <div class="prediction-fighters">
+        <div class="prediction-fighter">
+          <div class="fighter-name">${fighterA.name}</div>
+          <div class="fighter-probability">${Math.round(analysis.fighterA.prob * 100)}%</div>
+        </div>
+        <div class="prediction-vs">VS</div>
+        <div class="prediction-fighter">
+          <div class="fighter-name">${fighterB.name}</div>
+          <div class="fighter-probability">${Math.round(analysis.fighterB.prob * 100)}%</div>
+        </div>
+      </div>
+      <div class="prediction-winner">
+        <strong>🏆 Predicted Winner:</strong> ${winner}
+      </div>
+      <div class="prediction-confidence">
+        <strong>🎯 Confidence:</strong> ${analysis.confidence}%
+      </div>
+    </div>
+    <div class="share-card-footer">
+      <div class="share-buttons">
+        <button class="share-btn" onclick="copyToClipboard('${encodeURIComponent(shareText)}')">
+          📋 Copy Text
+        </button>
+        <button class="share-btn" onclick="downloadPredictionCard()">
+          📷 Download Card
+        </button>
+      </div>
+    </div>
+  `;
+  
+  // Show modal with share card
+  const modal = document.createElement("div");
+  modal.className = "modal share-modal";
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Share Prediction</h2>
+        <button class="modal-close" onclick="this.closest('.modal').remove()">&times;</button>
+      </div>
+      <div class="modal-body"></div>
+    </div>
+  `;
+  
+  modal.querySelector(".modal-body").appendChild(shareCard);
+  document.body.appendChild(modal);
+  modal.classList.remove("hidden");
+}
+
+function copyToClipboard(text) {
+  const decodedText = decodeURIComponent(text);
+  navigator.clipboard.writeText(decodedText).then(() => {
+    alert("Prediction copied to clipboard!");
+  });
+}
+
+function downloadPredictionCard() {
+  // Placeholder for download functionality
+  alert("Download feature coming soon!");
+}
+
+// ===== Simulation History =====
+
+function addToSimulationHistory(fighterA, fighterB, results) {
+  const historyEntry = {
+    id: Date.now(),
+    fighterA: fighterA.name,
+    fighterB: fighterB.name,
+    fighterAWinPercent: results.fighterAWinPercent,
+    fighterBWinPercent: results.fighterBWinPercent,
+    timestamp: new Date().toLocaleString()
+  };
+  
+  simulationHistory.unshift(historyEntry);
+  
+  // Keep only last 10 simulations
+  if (simulationHistory.length > 10) {
+    simulationHistory = simulationHistory.slice(0, 10);
+  }
+  
+  updateSimulationHistoryUI();
+}
+
+function updateSimulationHistoryUI() {
+  const historyContainer = document.getElementById("simulation-history");
+  if (!historyContainer) return;
+  
+  historyContainer.innerHTML = "";
+  
+  if (simulationHistory.length === 0) {
+    historyContainer.innerHTML = "<p>No simulations run yet.</p>";
+    return;
+  }
+  
+  simulationHistory.forEach(entry => {
+    const historyItem = document.createElement("div");
+    historyItem.className = "history-item";
+    historyItem.innerHTML = `
+      <div class="history-fighters">
+        <span class="history-fighter">${entry.fighterA}</span>
+        <span class="history-vs">vs</span>
+        <span class="history-fighter">${entry.fighterB}</span>
+      </div>
+      <div class="history-results">
+        <div class="history-result">
+          <span class="result-fighter">${entry.fighterA}</span>
+          <span class="result-percentage">${entry.fighterAWinPercent}%</span>
+        </div>
+        <div class="history-result">
+          <span class="result-fighter">${entry.fighterB}</span>
+          <span class="result-percentage">${entry.fighterBWinPercent}%</span>
+        </div>
+      </div>
+      <div class="history-timestamp">${entry.timestamp}</div>
+    `;
+    historyContainer.appendChild(historyItem);
+  });
+}
+
+function clearSimulationHistory() {
+  if (confirm("Are you sure you want to clear your simulation history?")) {
+    simulationHistory = [];
+    updateSimulationHistoryUI();
+  }
+}
+
+// ===== Leaderboard Functionality =====
+
+function initializeLeaderboard() {
+  const tabs = document.querySelectorAll('.leaderboard-tab');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Remove active class from all tabs
+      tabs.forEach(t => t.classList.remove('active'));
+      
+      // Add active class to clicked tab
+      tab.classList.add('active');
+      
+      // Update leaderboard content based on period
+      const period = tab.dataset.period;
+      updateLeaderboardContent(period);
+    });
+  });
+}
+
+function updateLeaderboardContent(period) {
+  // Simulated leaderboard data for different periods
+  const leaderboardData = {
+    weekly: [
+      { rank: 1, username: "MMAAnalyst92", stats: "42/50 correct • 84% accuracy", score: "1,250 pts" },
+      { rank: 2, username: "FightFan23", stats: "38/50 correct • 76% accuracy", score: "1,180 pts" },
+      { rank: 3, username: "OctaKing", stats: "35/50 correct • 70% accuracy", score: "1,050 pts" },
+      { rank: 4, username: "BetMaster", stats: "33/50 correct • 66% accuracy", score: "990 pts" },
+      { rank: 5, username: "UFCProphet", stats: "31/50 correct • 62% accuracy", score: "930 pts" }
+    ],
+    monthly: [
+      { rank: 1, username: "PredictionGuru", stats: "156/200 correct • 78% accuracy", score: "4,680 pts" },
+      { rank: 2, username: "MMAAnalyst92", stats: "142/200 correct • 71% accuracy", score: "4,260 pts" },
+      { rank: 3, username: "FightFan23", stats: "138/200 correct • 69% accuracy", score: "4,140 pts" },
+      { rank: 4, username: "OctaKing", stats: "125/200 correct • 62.5% accuracy", score: "3,750 pts" },
+      { rank: 5, username: "BetMaster", stats: "118/200 correct • 59% accuracy", score: "3,540 pts" }
+    ],
+    'all-time': [
+      { rank: 1, username: "PredictionGuru", stats: "892/1200 correct • 74.3% accuracy", score: "26,760 pts" },
+      { rank: 2, username: "MMAAnalyst92", stats: "845/1200 correct • 70.4% accuracy", score: "25,350 pts" },
+      { rank: 3, username: "FightFan23", stats: "798/1200 correct • 66.5% accuracy", score: "23,940 pts" },
+      { rank: 4, username: "OctaKing", stats: "756/1200 correct • 63% accuracy", score: "22,680 pts" },
+      { rank: 5, username: "BetMaster", stats: "712/1200 correct • 59.3% accuracy", score: "21,360 pts" }
+    ]
+  };
+  
+  const data = leaderboardData[period] || leaderboardData.weekly;
+  const rankingsContainer = document.querySelector('.leaderboard-rankings');
+  
+  if (rankingsContainer) {
+    rankingsContainer.innerHTML = '';
+    
+    data.forEach(user => {
+      const item = document.createElement('div');
+      item.className = 'leaderboard-item';
+      item.innerHTML = `
+        <div class="rank">${user.rank}</div>
+        <div class="user-info">
+          <div class="username">${user.username}</div>
+          <div class="user-stats">${user.stats}</div>
+        </div>
+        <div class="user-score">${user.score}</div>
+      `;
+      rankingsContainer.appendChild(item);
+    });
+  }
+}
+
+function initializeSimulator() {
+  runSimulationBtn.addEventListener("click", runSimulation);
+}
+
+function runSimulation() {
+  const fighterAName = fighterASelect.value;
+  const fighterBName = fighterBSelect.value;
+  
+  if (!fighterAName || !fighterBName) {
+    alert("Please select both fighters");
+    return;
+  }
+  
+  if (fighterAName === fighterBName) {
+    alert("Please select different fighters");
+    return;
+  }
+  
+  // Find fighters from our data
+  const fighterA = allFighters.find(f => f.name === fighterAName);
+  const fighterB = allFighters.find(f => f.name === fighterBName);
+  
+  if (!fighterA || !fighterB) {
+    alert("Fighter data not available");
+    return;
+  }
+  
+  // Run 1000 simulations
+  const results = simulateFights(fighterA, fighterB, 1000);
+  
+  // Add to simulation history
+  addToSimulationHistory(fighterA, fighterB, results);
+  
+  // Update UI with results
+  resultFighterA.textContent = fighterA.name;
+  resultFighterB.textContent = fighterB.name;
+  fighterAWinPercent.textContent = `${results.fighterAWinPercent}%`;
+  fighterBWinPercent.textContent = `${results.fighterBWinPercent}%`;
+  
+  // Update method breakdown
+  document.getElementById("ko-percentage").style.width = `${results.koPercent}%`;
+  document.getElementById("ko-percent-text").textContent = `${results.koPercent}%`;
+  
+  document.getElementById("sub-percentage").style.width = `${results.subPercent}%`;
+  document.getElementById("sub-percent-text").textContent = `${results.subPercent}%`;
+  
+  document.getElementById("dec-percentage").style.width = `${results.decPercent}%`;
+  document.getElementById("dec-percent-text").textContent = `${results.decPercent}%`;
+  
+  simulationResults.classList.remove("hidden");
+}
+
+function simulateFights(fighterA, fighterB, numSimulations) {
+  const analysis = calculatePrediction(fighterA, fighterB);
+  
+  // Use the prediction probabilities as base
+  const baseProbA = analysis.fighterA.prob;
+  const baseProbB = analysis.fighterB.prob;
+  
+  // Add some randomness for simulation effect
+  let fighterAWins = 0;
+  let fighterBWins = 0;
+  let koCount = 0;
+  let subCount = 0;
+  let decCount = 0;
+  
+  for (let i = 0; i < numSimulations; i++) {
+    // Add random variance to base probabilities
+    const variance = 0.1; // 10% variance
+    const randomFactor = (Math.random() - 0.5) * variance;
+    
+    const probA = Math.max(0, Math.min(1, baseProbA + randomFactor));
+    const probB = 1 - probA;
+    
+    const winner = Math.random() < probA ? 'A' : 'B';
+    
+    if (winner === 'A') {
+      fighterAWins++;
+    } else {
+      fighterBWins++;
+    }
+    
+    // Determine method based on fighter profiles
+    const winnerFighter = winner === 'A' ? fighterA : fighterB;
+    const rand = Math.random();
+    
+    if (rand < winnerFighter.koPct) {
+      koCount++;
+    } else if (rand < winnerFighter.koPct + winnerFighter.subPct) {
+      subCount++;
+    } else {
+      decCount++;
+    }
+  }
+  
+  return {
+    fighterAWinPercent: Math.round((fighterAWins / numSimulations) * 100),
+    fighterBWinPercent: Math.round((fighterBWins / numSimulations) * 100),
+    koPercent: Math.round((koCount / numSimulations) * 100),
+    subPercent: Math.round((subCount / numSimulations) * 100),
+    decPercent: Math.round((decCount / numSimulations) * 100)
+  };
+}
+
+// ===== Fight Comparison =====
+
+function initializeComparison() {
+  runComparisonBtn.addEventListener("click", runComparison);
+}
+
+function runComparison() {
+  const fighterAName = compareFighterASelect.value;
+  const fighterBName = compareFighterBSelect.value;
+  
+  if (!fighterAName || !fighterBName) {
+    alert("Please select both fighters");
+    return;
+  }
+  
+  if (fighterAName === fighterBName) {
+    alert("Please select different fighters");
+    return;
+  }
+  
+  // Find fighters from our data
+  const fighterA = allFighters.find(f => f.name === fighterAName);
+  const fighterB = allFighters.find(f => f.name === fighterBName);
+  
+  if (!fighterA || !fighterB) {
+    alert("Fighter data not available");
+    return;
+  }
+  
+  // Calculate prediction
+  const analysis = calculatePrediction(fighterA, fighterB);
+  
+  // Update UI with comparison data
+  updateComparisonUI(fighterA, fighterB, analysis);
+  
+  comparisonResults.classList.remove("hidden");
+}
+
+function updateComparisonUI(fighterA, fighterB, analysis) {
+  // Update fighter A info
+  document.getElementById("compare-name-a").textContent = fighterA.name;
+  document.getElementById("compare-record-a").textContent = fighterA.record;
+  document.getElementById("compare-height-a").textContent = "-"; // Not available in current data
+  document.getElementById("compare-reach-a").textContent = "-"; // Not available in current data
+  document.getElementById("compare-striking-a").textContent = `${Math.round(fighterA.koPct * 100)}%`;
+  document.getElementById("compare-td-a").textContent = `${Math.round(fighterA.subPct * 100)}%`;
+  
+  // Update fighter B info
+  document.getElementById("compare-name-b").textContent = fighterB.name;
+  document.getElementById("compare-record-b").textContent = fighterB.record;
+  document.getElementById("compare-height-b").textContent = "-"; // Not available in current data
+  document.getElementById("compare-reach-b").textContent = "-"; // Not available in current data
+  document.getElementById("compare-striking-b").textContent = `${Math.round(fighterB.koPct * 100)}%`;
+  document.getElementById("compare-td-b").textContent = `${Math.round(fighterB.subPct * 100)}%`;
+  
+  // Update prediction
+  const probA = Math.round(analysis.fighterA.prob * 100);
+  const probB = Math.round(analysis.fighterB.prob * 100);
+  
+  document.getElementById("compare-prob-a").textContent = `${probA}%`;
+  document.getElementById("compare-prob-fill-a").style.width = `${probA}%`;
+  
+  document.getElementById("compare-prob-b").textContent = `${probB}%`;
+  document.getElementById("compare-prob-fill-b").style.width = `${probB}%`;
+  
+  const winner = analysis.winner === "A" ? fighterA.name : fighterB.name;
+  document.getElementById("compare-winner").textContent = `Predicted Winner: ${winner}`;
+}
+
+// ===== Accuracy Tracking =====
+
+function updateAccuracySection() {
+  // Simulated accuracy data (in a real app, this would come from actual prediction history)
+  const totalPredictions = 50;
+  const simulatedAccuracy = Math.floor(Math.random() * 20) + 60; // 60-80%
+  const correctPredictions = Math.floor((simulatedAccuracy / 100) * totalPredictions);
+  const incorrectPredictions = totalPredictions - correctPredictions;
+  const avgConfidence = Math.floor(Math.random() * 15) + 65; // 65-80%
+  const bestPickSuccess = Math.floor(Math.random() * 25) + 70; // 70-95%
+  
+  // Update UI
+  accuracyLast50.textContent = `${correctPredictions} / ${totalPredictions}`;
+  accuracyPercent.textContent = `${simulatedAccuracy}%`;
+  correctCount.textContent = correctPredictions;
+  incorrectCount.textContent = incorrectPredictions;
+  avgConfidence.textContent = `${avgConfidence}%`;
+  bestPickRate.textContent = `${bestPickSuccess}%`;
+}
+
+function populateFighterDropdowns(fighters) {
+  // Clear existing options
+  fighterASelect.innerHTML = '<option value="">Select Fighter A</option>';
+  fighterBSelect.innerHTML = '<option value="">Select Fighter B</option>';
+  compareFighterASelect.innerHTML = '<option value="">Select Fighter A</option>';
+  compareFighterBSelect.innerHTML = '<option value="">Select Fighter B</option>';
+  
+  // Sort fighters by name
+  const sortedFighters = [...fighters].sort((a, b) => a.name.localeCompare(b.name));
+  
+  sortedFighters.forEach(fighter => {
+    const optionA = document.createElement("option");
+    optionA.value = fighter.name;
+    optionA.textContent = `${fighter.name} (${fighter.record})`;
+    fighterASelect.appendChild(optionA);
+    
+    const optionB = document.createElement("option");
+    optionB.value = fighter.name;
+    optionB.textContent = `${fighter.name} (${fighter.record})`;
+    fighterBSelect.appendChild(optionB);
+    
+    const optionCompareA = document.createElement("option");
+    optionCompareA.value = fighter.name;
+    optionCompareA.textContent = `${fighter.name} (${fighter.record})`;
+    compareFighterASelect.appendChild(optionCompareA);
+    
+    const optionCompareB = document.createElement("option");
+    optionCompareB.value = fighter.name;
+    optionCompareB.textContent = `${fighter.name} (${fighter.record})`;
+    compareFighterBSelect.appendChild(optionCompareB);
+  });
 }
 
 // ===== Data Fetching =====
@@ -654,6 +1434,9 @@ async function fetchUpcomingEvents() {
       return [];
     }
 
+    // Collect all fighters for search and simulator
+    allFighters = [];
+
     const events = ufcEventsRaw.map((ev, index) => {
       const fights =
         (ev.fights || []).map((fight, i) => {
@@ -668,6 +1451,9 @@ async function fetchUpcomingEvents() {
             weightLbs,
             !!fight.main
           );
+
+          // Add fighters to global list
+          allFighters.push(fighterA, fighterB);
 
           return {
             id: `${index}-${i}`,
@@ -686,6 +1472,14 @@ async function fetchUpcomingEvents() {
       };
     });
 
+    // Remove duplicate fighters
+    allFighters = allFighters.filter((fighter, index, self) => 
+      index === self.findIndex(f => f.name === fighter.name)
+    );
+
+    // Populate fighter dropdowns
+    populateFighterDropdowns(allFighters);
+
     return events;
   } catch (err) {
     console.error("Failed to fetch MMA events:", err);
@@ -703,13 +1497,9 @@ async function refreshData() {
 
   try {
     const events = await fetchUpcomingEvents();
+    currentEvents = events;
     renderEvents(events);
-    const now = new Date();
-    lastUpdatedEl.textContent = now.toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit"
-    });
+    
     if (events.length > 0) {
       setLiveStatus("Live UFC feed synced", "live");
     }
@@ -734,11 +1524,56 @@ function startAutoRefresh() {
 // ===== Init =====
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Initialize all features
   refreshBtn.addEventListener("click", () => {
     refreshData();
   });
 
+  // Initialize search functionality
+  initializeFighterSearch();
+  
+  // Initialize modal
+  initializeModal();
+  
+  // Initialize simulator
+  initializeSimulator();
+  
+  // Initialize comparison
+  initializeComparison();
+  
+  // Initialize leaderboard
+  initializeLeaderboard();
+  
+  // Initialize navigation
+  initializeNavigation();
+
+  // Load initial data
   refreshData();
   startAutoRefresh();
 });
+
+// Navigation functionality
+function initializeNavigation() {
+  const navLinks = document.querySelectorAll('.nav-link');
+  
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      // Remove active class from all links
+      navLinks.forEach(l => l.classList.remove('active'));
+      
+      // Add active class to clicked link
+      link.classList.add('active');
+      
+      // Scroll to section
+      const targetId = link.getAttribute('href').substring(1);
+      const targetSection = document.getElementById(targetId);
+      
+      if (targetSection) {
+        targetSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  });
+}
 

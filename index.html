@@ -9,53 +9,87 @@
 <body>
   <div class="app-glow"></div>
 
-  <header class="app-header">
-    <div class="logo-area">
-      <div class="logo-orb">OR</div>
-      <div class="logo-text">
-        <h1>OctaRealm</h1>
-        <p>UFC Reality Engine • AI Fight Predictions</p>
+  <nav class="top-nav">
+    <div class="nav-container">
+      <div class="nav-brand">
+        <img src="assets/logo.png" alt="OctaRealm Logo" class="nav-logo">
+        <span class="nav-title">OctaRealm</span>
+      </div>
+      
+      <div class="nav-menu">
+        <a href="#events" class="nav-link active">Events</a>
+        <a href="#fighters" class="nav-link">Fighters</a>
+        <a href="#simulator" class="nav-link">Simulator</a>
+        <a href="#compare" class="nav-link">Compare</a>
+        <a href="#leaderboard" class="nav-link">Leaderboard</a>
+        <a href="#accuracy" class="nav-link">Accuracy</a>
+      </div>
+
+      <div class="nav-actions">
+        <div class="search-container">
+          <input type="text" id="fighter-search" class="search-input" placeholder="Search fighters...">
+          <div id="search-results" class="search-results hidden"></div>
+        </div>
+        <button id="refresh-btn" class="btn btn-primary">
+          Refresh
+        </button>
       </div>
     </div>
-    <div class="header-controls">
-      <div class="status-indicator">
-        <span class="status-dot"></span>
-        <span id="live-status-text">Initializing feed...</span>
-      </div>
-      <button id="refresh-btn" class="btn btn-primary">
-        Refresh Now
-      </button>
-    </div>
-  </header>
+  </nav>
 
   <main class="app-main">
-    <section class="dashboard-summary" id="predictions-section">
-      <div class="summary-card">
-        <h2>Upcoming Reality Scan</h2>
-        <p>Upcoming UFC events are scanned and evaluated in real-time using AI-style combat metrics.</p>
-        <div class="summary-metrics">
-          <div class="metric">
-            <span class="metric-label">Tracked Events</span>
-            <span id="metric-events" class="metric-value">--</span>
-          </div>
-          <div class="metric">
-            <span class="metric-label">Analyzed Fights</span>
-            <span id="metric-fights" class="metric-value">--</span>
-          </div>
-          <div class="metric">
-            <span class="metric-label">Last Sync</span>
-            <span id="last-updated" class="metric-value">--</span>
+    <!-- Hero Stats Cards -->
+    <section class="hero-stats" id="events">
+      <div class="stats-card">
+        <div class="stats-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+        </div>
+        <div class="stats-content">
+          <h3>Upcoming Events</h3>
+          <div class="stats-number" id="upcoming-events-count">0</div>
+          <p>Events tracked</p>
+          <div class="stats-sub">
+            <span id="analyzed-fights-count">0</span> fights analyzed
           </div>
         </div>
       </div>
-      <div class="summary-card summary-card-right">
-        <h2>AI Prediction Engine</h2>
-        <ul class="engine-list">
-          <li>Striking: volume, accuracy, defense, damage intake</li>
-          <li>Grappling: takedowns, control, submission threats</li>
-          <li>Finishing: KO power, submission danger, decision tendencies</li>
-          <li>Momentum: recent form, streaks, performance trend</li>
-        </ul>
+
+      <div class="stats-card">
+        <div class="stats-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+          </svg>
+        </div>
+        <div class="stats-content">
+          <h3>Prediction Accuracy</h3>
+          <div class="stats-number" id="accuracy-percentage">0%</div>
+          <p>Last 50 predictions</p>
+          <div class="stats-sub">
+            <span id="correct-picks-count">0</span> correct picks
+          </div>
+        </div>
+      </div>
+
+      <div class="stats-card">
+        <div class="stats-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"></path>
+            <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+          </svg>
+        </div>
+        <div class="stats-content">
+          <h3>Best Pick</h3>
+          <div class="stats-number" id="best-pick-edge">0%</div>
+          <p id="best-pick-fighter">No edge available</p>
+          <div class="stats-sub">
+            <span id="best-pick-confidence">High</span> confidence
+          </div>
+        </div>
       </div>
     </section>
 
@@ -71,12 +105,389 @@
         <p>No events available right now. Try refreshing or check back later.</p>
       </div>
     </section>
+
+    <!-- Fight Simulator Section -->
+    <section class="simulator-section" id="simulator">
+      <div class="section-header">
+        <h2>Fight Simulator</h2>
+        <span class="section-subtitle">Run 1000 AI-powered simulations to predict fight outcomes.</span>
+      </div>
+      <div class="simulator-card">
+        <div class="simulator-inputs">
+          <div class="fighter-select">
+            <label>Fighter A</label>
+            <select id="fighter-a-select" class="fighter-dropdown">
+              <option value="">Select Fighter A</option>
+            </select>
+          </div>
+          <div class="vs-divider">VS</div>
+          <div class="fighter-select">
+            <label>Fighter B</label>
+            <select id="fighter-b-select" class="fighter-dropdown">
+              <option value="">Select Fighter B</option>
+            </select>
+          </div>
+        </div>
+        <button id="run-simulation" class="btn btn-primary btn-large">
+          Run 1000 Simulations
+        </button>
+        <div id="simulation-results" class="simulation-results hidden">
+          <div class="result-row">
+            <div class="result-fighter">
+              <span class="result-name" id="result-fighter-a">Fighter A</span>
+              <div class="result-win-percentage" id="fighter-a-win-percent">50%</div>
+            </div>
+            <div class="result-fighter">
+              <span class="result-name" id="result-fighter-b">Fighter B</span>
+              <div class="result-win-percentage" id="fighter-b-win-percent">50%</div>
+            </div>
+          </div>
+          <div class="method-breakdown">
+            <div class="method-row">
+              <span>KO/TKO</span>
+              <div class="progress-bar">
+                <div class="progress-fill" id="ko-percentage" style="width: 50%"></div>
+              </div>
+              <span id="ko-percent-text">50%</span>
+            </div>
+            <div class="method-row">
+              <span>Submission</span>
+              <div class="progress-bar">
+                <div class="progress-fill" id="sub-percentage" style="width: 30%"></div>
+              </div>
+              <span id="sub-percent-text">30%</span>
+            </div>
+            <div class="method-row">
+              <span>Decision</span>
+              <div class="progress-bar">
+                <div class="progress-fill" id="dec-percentage" style="width: 20%"></div>
+              </div>
+              <span id="dec-percent-text">20%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Fighters Section -->
+    <section class="fighters-section" id="fighters">
+      <div class="section-header">
+        <h2>Fighter Database</h2>
+        <span class="section-subtitle">Browse and search through our comprehensive fighter database.</span>
+      </div>
+      <div class="fighters-card">
+        <div class="fighters-search-prompt">
+          <h3>Search Fighters</h3>
+          <p>Use the search bar in the navigation to find specific fighters and view their detailed profiles.</p>
+          <div class="search-hint">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+            </svg>
+            <span>Try searching for any UFC fighter by name</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Compare Fighters Section -->
+    <section class="compare-section" id="compare">
+      <div class="section-header">
+        <h2>Compare Fighters</h2>
+        <span class="section-subtitle">Select two fighters to compare their stats and see AI predictions.</span>
+      </div>
+      <div class="compare-card">
+        <div class="compare-inputs">
+          <div class="compare-select">
+            <label>Fighter A</label>
+            <select id="compare-fighter-a" class="fighter-dropdown">
+              <option value="">Select Fighter A</option>
+            </select>
+          </div>
+          <div class="compare-vs">VS</div>
+          <div class="compare-select">
+            <label>Fighter B</label>
+            <select id="compare-fighter-b" class="fighter-dropdown">
+              <option value="">Select Fighter B</option>
+            </select>
+          </div>
+        </div>
+        <button id="run-comparison" class="btn btn-primary btn-large">
+          Compare Fighters
+        </button>
+        <div id="comparison-results" class="comparison-results hidden">
+          <div class="comparison-stats">
+            <div class="fighter-comparison">
+              <h4 id="compare-name-a">Fighter A</h4>
+              <div class="comparison-details">
+                <div class="detail-row">
+                  <span>Record:</span>
+                  <span id="compare-record-a">0-0</span>
+                </div>
+                <div class="detail-row">
+                  <span>Height:</span>
+                  <span id="compare-height-a">-"</span>
+                </div>
+                <div class="detail-row">
+                  <span>Reach:</span>
+                  <span id="compare-reach-a">-"</span>
+                </div>
+                <div class="detail-row">
+                  <span>Striking Acc:</span>
+                  <span id="compare-striking-a">0%</span>
+                </div>
+                <div class="detail-row">
+                  <span>Takedown Acc:</span>
+                  <span id="compare-td-a">0%</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="prediction-comparison">
+              <h4>AI Prediction</h4>
+              <div class="prediction-bars">
+                <div class="fighter-probability">
+                  <span id="compare-prob-a">50%</span>
+                  <div class="probability-bar">
+                    <div class="probability-fill" id="compare-prob-fill-a" style="width: 50%"></div>
+                  </div>
+                </div>
+                <div class="fighter-probability">
+                  <span id="compare-prob-b">50%</span>
+                  <div class="probability-bar">
+                    <div class="probability-fill" id="compare-prob-fill-b" style="width: 50%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="predicted-winner-comparison" id="compare-winner">
+                Predicted Winner: Fighter A
+              </div>
+            </div>
+            
+            <div class="fighter-comparison">
+              <h4 id="compare-name-b">Fighter B</h4>
+              <div class="comparison-details">
+                <div class="detail-row">
+                  <span>Record:</span>
+                  <span id="compare-record-b">0-0</span>
+                </div>
+                <div class="detail-row">
+                  <span>Height:</span>
+                  <span id="compare-height-b">-"</span>
+                </div>
+                <div class="detail-row">
+                  <span>Reach:</span>
+                  <span id="compare-reach-b">-"</span>
+                </div>
+                <div class="detail-row">
+                  <span>Striking Acc:</span>
+                  <span id="compare-striking-b">0%</span>
+                </div>
+                <div class="detail-row">
+                  <span>Takedown Acc:</span>
+                  <span id="compare-td-b">0%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Prediction Leaderboard Section -->
+    <section class="leaderboard-section" id="leaderboard">
+      <div class="section-header">
+        <h2>Prediction Leaderboard</h2>
+        <span class="section-subtitle">Compete with other users by making fight predictions.</span>
+      </div>
+      <div class="leaderboard-card">
+        <div class="leaderboard-tabs">
+          <button class="leaderboard-tab active" data-period="weekly">Weekly</button>
+          <button class="leaderboard-tab" data-period="monthly">Monthly</button>
+          <button class="leaderboard-tab" data-period="all-time">All Time</button>
+        </div>
+        <div class="leaderboard-content">
+          <div class="leaderboard-rankings">
+            <div class="leaderboard-item">
+              <div class="rank">1</div>
+              <div class="user-info">
+                <div class="username">MMAAnalyst92</div>
+                <div class="user-stats">42/50 correct • 84% accuracy</div>
+              </div>
+              <div class="user-score">1,250 pts</div>
+            </div>
+            <div class="leaderboard-item">
+              <div class="rank">2</div>
+              <div class="user-info">
+                <div class="username">FightFan23</div>
+                <div class="user-stats">38/50 correct • 76% accuracy</div>
+              </div>
+              <div class="user-score">1,180 pts</div>
+            </div>
+            <div class="leaderboard-item">
+              <div class="rank">3</div>
+              <div class="user-info">
+                <div class="username">OctaKing</div>
+                <div class="user-stats">35/50 correct • 70% accuracy</div>
+              </div>
+              <div class="user-score">1,050 pts</div>
+            </div>
+            <div class="leaderboard-item">
+              <div class="rank">4</div>
+              <div class="user-info">
+                <div class="username">BetMaster</div>
+                <div class="user-stats">33/50 correct • 66% accuracy</div>
+              </div>
+              <div class="user-score">990 pts</div>
+            </div>
+            <div class="leaderboard-item">
+              <div class="rank">5</div>
+              <div class="user-info">
+                <div class="username">UFCProphet</div>
+                <div class="user-stats">31/50 correct • 62% accuracy</div>
+              </div>
+              <div class="user-score">930 pts</div>
+            </div>
+          </div>
+        </div>
+        <div class="leaderboard-actions">
+          <button class="btn btn-primary">Join Competition</button>
+          <button class="btn btn-secondary">View All Rankings</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Simulation History Section -->
+    <section class="history-section" id="history">
+      <div class="section-header">
+        <h2>Simulation History</h2>
+        <span class="section-subtitle">Track your recent fight simulation results.</span>
+      </div>
+      <div class="history-card">
+        <div class="history-header">
+          <h3>Recent Simulations</h3>
+          <button class="btn btn-secondary" onclick="clearSimulationHistory()">Clear History</button>
+        </div>
+        <div id="simulation-history" class="history-content">
+          <p>No simulations run yet.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Prediction Accuracy Section -->
+    <section class="accuracy-section" id="accuracy">
+      <div class="section-header">
+        <h2>Prediction Accuracy</h2>
+        <span class="section-subtitle">Track the performance of our AI prediction engine over time.</span>
+      </div>
+      <div class="accuracy-card">
+        <div class="accuracy-overview">
+          <div class="accuracy-metric">
+            <h3>Last 50 Predictions</h3>
+            <div class="accuracy-number" id="accuracy-last-50">0 / 50</div>
+            <div class="accuracy-percentage" id="accuracy-percent">0%</div>
+          </div>
+          <div class="accuracy-breakdown">
+            <h4>Recent Performance</h4>
+            <div class="accuracy-stats">
+              <div class="stat-row">
+                <span>Correct Predictions:</span>
+                <span id="correct-count">0</span>
+              </div>
+              <div class="stat-row">
+                <span>Incorrect Predictions:</span>
+                <span id="incorrect-count">0</span>
+              </div>
+              <div class="stat-row">
+                <span>Average Confidence:</span>
+                <span id="avg-confidence">0%</span>
+              </div>
+              <div class="stat-row">
+                <span>Best Pick Success Rate:</span>
+                <span id="best-pick-rate">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="accuracy-note">
+          <p><strong>Note:</strong> Accuracy tracking is simulated for demonstration purposes. In production, this would track actual prediction results against real fight outcomes.</p>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer class="app-footer">
     <span>OctaRealm ● Experimental UFC prediction dashboard</span>
     <span>Live UFC cards via public MMA API • Predictions are experimental only.</span>
   </footer>
+
+  <!-- Fighter Profile Modal -->
+  <div id="fighter-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modal-fighter-name">Fighter Name</h2>
+        <button class="modal-close" id="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="fighter-profile">
+          <div class="profile-basic">
+            <div class="profile-record" id="profile-record">0-0-0</div>
+            <div class="profile-info">
+              <div class="info-row">
+                <span class="info-label">Weight Class:</span>
+                <span id="profile-weight-class">-</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Height:</span>
+                <span id="profile-height">-</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Reach:</span>
+                <span id="profile-reach">-</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Stance:</span>
+                <span id="profile-stance">-</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Country:</span>
+                <span id="profile-country">-</span>
+              </div>
+            </div>
+          </div>
+          <div class="profile-stats">
+            <h3>Performance Stats</h3>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-label">Striking Accuracy</span>
+                <span class="stat-value" id="stat-striking-acc">0%</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Striking Defense</span>
+                <span class="stat-value" id="stat-striking-def">0%</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Takedown Accuracy</span>
+                <span class="stat-value" id="stat-td-acc">0%</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Takedown Defense</span>
+                <span class="stat-value" id="stat-td-def">0%</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Submissions Avg</span>
+                <span class="stat-value" id="stat-sub-avg">0.0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Recent Form</span>
+                <span class="stat-value" id="stat-recent-form">-</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>
