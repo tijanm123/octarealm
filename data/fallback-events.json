@@ -1,0 +1,280 @@
+{
+  "events": [
+    {
+      "id": "ufc-308-2024-03-15",
+      "name": "UFC 308: Makhachev vs. Volkanovski 2",
+      "date": "2024-03-15T22:00:00Z",
+      "location": "T-Mobile Arena, Las Vegas, NV",
+      "fights": [
+        {
+          "fighterA": {
+            "name": "Islam Makhachev",
+            "record": "25-1-0",
+            "weightLbs": 155,
+            "height": "5'10\"",
+            "reach": "70\"",
+            "stance": "Southpaw",
+            "country": "Russia",
+            "imageUrl": null
+          },
+          "fighterB": {
+            "name": "Alexander Volkanovski",
+            "record": "26-2-0",
+            "weightLbs": 145,
+            "height": "5'6\"",
+            "reach": "71\"",
+            "stance": "Southpaw",
+            "country": "Australia",
+            "imageUrl": null
+          },
+          "weightClass": "Lightweight",
+          "methodOfVictory": {
+            "koPct": 65,
+            "subPct": 25,
+            "decPct": 10
+          }
+        },
+        {
+          "fighterA": {
+            "name": "Leon Edwards",
+            "record": "21-3-0",
+            "weightLbs": 170,
+            "height": "5'9\"",
+            "reach": "74\"",
+            "stance": "Southpaw",
+            "country": "England",
+            "imageUrl": null
+          },
+          "fighterB": {
+            "name": "Belal Muhammad",
+            "record": "23-3-0",
+            "weightLbs": 170,
+            "height": "5'8\"",
+            "reach": "71\"",
+            "stance": "Orthodox",
+            "country": "USA",
+            "imageUrl": null
+          },
+          "weightClass": "Welterweight",
+          "methodOfVictory": {
+            "koPct": 45,
+            "subPct": 15,
+            "decPct": 40
+          }
+        },
+        {
+          "fighterA": {
+            "name": "Israel Adesanya",
+            "record": "24-3-0",
+            "weightLbs": 185,
+            "height": "6'4\"",
+            "reach": "80\"",
+            "stance": "Southpaw",
+            "country": "New Zealand",
+            "imageUrl": null
+          },
+          "fighterB": {
+            "name": "Sean Strickland",
+            "record": "28-5-0",
+            "weightLbs": 185,
+            "height": "6'1\"",
+            "reach": "76\"",
+            "stance": "Southpaw",
+            "country": "USA",
+            "imageUrl": null
+          },
+          "weightClass": "Middleweight",
+          "methodOfVictory": {
+            "koPct": 70,
+            "subPct": 10,
+            "decPct": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "ufc-fight-night-2024-03-20",
+      "name": "UFC Fight Night: Ladd vs. Dumont",
+      "date": "2024-03-20T20:00:00Z",
+      "location": "United Center, Chicago, IL",
+      "fights": [
+        {
+          "fighterA": {
+            "name": "Julianna Pena",
+            "record": "11-5-0",
+            "weightLbs": 135,
+            "height": "5'7\"",
+            "reach": "66\"",
+            "stance": "Orthodox",
+            "country": "USA",
+            "imageUrl": null
+          },
+          "fighterB": {
+            "name": "Raquel Pennington",
+            "record": "15-8-0",
+            "weightLbs": 135,
+            "height": "5'7\"",
+            "reach": "68\"",
+            "stance": "Orthodox",
+            "country": "USA",
+            "imageUrl": null
+          },
+          "weightClass": "Women's Bantamweight",
+          "methodOfVictory": {
+            "koPct": 40,
+            "subPct": 35,
+            "decPct": 25
+          }
+        },
+        {
+          "fighterA": {
+            "name": "Anthony Smith",
+            "record": "37-18-0",
+            "weightLbs": 205,
+            "height": "6'4\"",
+            "reach": "78\"",
+            "stance": "Orthodox",
+            "country": "USA",
+            "imageUrl": null
+          },
+          "fighterB": {
+            "name": "Dominick Reyes",
+            "record": "13-4-0",
+            "weightLbs": 205,
+            "height": "6'4\"",
+            "reach": "76\"",
+            "stance": "Orthodox",
+            "country": "USA",
+            "imageUrl": null
+          },
+          "weightClass": "Light Heavyweight",
+          "methodOfVictory": {
+            "koPct": 55,
+            "subPct": 20,
+            "decPct": 25
+          }
+        },
+        {
+          "fighterA": {
+            "name": "Marlon Vera",
+            "record": "21-8-0",
+            "weightLbs": 135,
+            "height": "5'8\"",
+            "reach": "70\"",
+            "stance": "Orthodox",
+            "country": "Ecuador",
+            "imageUrl": null
+          },
+          "fighterB": {
+            "name": "Cory Sandhagen",
+            "record": "17-5-0",
+            "weightLbs": 135,
+            "height": "5'7\"",
+            "reach": "69\"",
+            "stance": "Southpaw",
+            "country": "USA",
+            "imageUrl": null
+          },
+          "weightClass": "Bantamweight",
+          "methodOfVictory": {
+            "koPct": 50,
+            "subPct": 30,
+            "decPct": 20
+          }
+        }
+      ]
+    },
+    {
+      "id": "ufc-309-2024-03-25",
+      "name": "UFC 309: Jones vs. Miocic",
+      "date": "2024-03-25T22:00:00Z",
+      "location": "Madison Square Garden, New York, NY",
+      "fights": [
+        {
+          "fighterA": {
+            "name": "Jon Jones",
+            "record": "27-1-0",
+            "weightLbs": 265,
+            "height": "6'4\"",
+            "reach": "84.5\"",
+            "stance": "Orthodox",
+            "country": "USA",
+            "imageUrl": null
+          },
+          "fighterB": {
+            "name": "Stipe Miocic",
+            "record": "20-4-0",
+            "weightLbs": 265,
+            "height": "6'4\"",
+            "reach": "80\"",
+            "stance": "Orthodox",
+            "country": "USA",
+            "imageUrl": null
+          },
+          "weightClass": "Heavyweight",
+          "methodOfVictory": {
+            "koPct": 60,
+            "subPct": 15,
+            "decPct": 25
+          }
+        },
+        {
+          "fighterA": {
+            "name": "Zhang Weili",
+            "record": "24-3-0",
+            "weightLbs": 115,
+            "height": "5'8\"",
+            "reach": "63\"",
+            "stance": "Southpaw",
+            "country": "China",
+            "imageUrl": null
+          },
+          "fighterB": {
+            "name": "Xiaonan Yan",
+            "record": "17-3-0",
+            "weightLbs": 115,
+            "height": "5'4\"",
+            "reach": "64\"",
+            "stance": "Orthodox",
+            "country": "China",
+            "imageUrl": null
+          },
+          "weightClass": "Women's Strawweight",
+          "methodOfVictory": {
+            "koPct": 35,
+            "subPct": 40,
+            "decPct": 25
+          }
+        },
+        {
+          "fighterA": {
+            "name": "Charles Oliveira",
+            "record": "34-9-0",
+            "weightLbs": 155,
+            "height": "5'10\"",
+            "reach": "74\"",
+            "stance": "Orthodox",
+            "country": "Brazil",
+            "imageUrl": null
+          },
+          "fighterB": {
+            "name": "Dustin Poirier",
+            "record": "29-8-0",
+            "weightLbs": 155,
+            "height": "5'9\"",
+            "reach": "72\"",
+            "stance": "Southpaw",
+            "country": "USA",
+            "imageUrl": null
+          },
+          "weightClass": "Lightweight",
+          "methodOfVictory": {
+            "koPct": 45,
+            "subPct": 45,
+            "decPct": 10
+          }
+        }
+      ]
+    }
+  ]
+}

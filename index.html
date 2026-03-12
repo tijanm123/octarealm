@@ -30,6 +30,27 @@
           <input type="text" id="fighter-search" class="search-input" placeholder="Search fighters...">
           <div id="search-results" class="search-results hidden"></div>
         </div>
+        
+        <!-- User Account Section -->
+        <div class="user-account">
+          <div id="user-profile" class="user-profile hidden">
+            <div class="user-avatar" id="user-avatar">U</div>
+            <div class="user-info">
+              <div class="user-name" id="user-name">User</div>
+              <div class="user-level" id="user-level">Level 1</div>
+            </div>
+            <button id="user-menu-btn" class="user-menu-btn">▼</button>
+            <div id="user-menu" class="user-menu hidden">
+              <button id="view-profile-btn">View Profile</button>
+              <button id="logout-btn">Logout</button>
+            </div>
+          </div>
+          <div id="auth-buttons" class="auth-buttons">
+            <button id="login-btn" class="btn btn-secondary">Login</button>
+            <button id="signup-btn" class="btn btn-primary">Sign Up</button>
+          </div>
+        </div>
+        
         <button id="refresh-btn" class="btn btn-primary">
           Refresh
         </button>
@@ -94,12 +115,19 @@
     </section>
 
     <section class="events-section" id="events-section">
+      <div id="data-status-banner" class="data-status-banner hidden">
+        <span id="status-message">Live UFC data unavailable — showing fallback event data</span>
+      </div>
       <div class="section-header">
         <h2>Upcoming UFC Events</h2>
         <span class="section-subtitle">Tap an event to expand its fight card and see AI predictions.</span>
       </div>
       <div id="events-container" class="events-container">
         <!-- Event and fight cards are injected here -->
+      </div>
+      <div id="loading-state" class="loading-state hidden">
+        <div class="loading-spinner"></div>
+        <p>Loading UFC events...</p>
       </div>
       <div id="empty-state" class="empty-state hidden">
         <p>No events available right now. Try refreshing or check back later.</p>
@@ -484,6 +512,112 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authentication Modals -->
+  <div id="login-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Login</h2>
+        <button class="modal-close" onclick="closeModal('login-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="login-form">
+          <div class="form-group">
+            <label for="login-email">Email</label>
+            <input type="email" id="login-email" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-large">Login</button>
+        </form>
+        <div class="auth-switch">
+          Don't have an account? <a href="#" onclick="switchToSignup()">Sign Up</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="signup-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Sign Up</h2>
+        <button class="modal-close" onclick="closeModal('signup-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="signup-form">
+          <div class="form-group">
+            <label for="signup-username">Username</label>
+            <input type="text" id="signup-username" required>
+          </div>
+          <div class="form-group">
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" required>
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" required>
+          </div>
+          <div class="form-group">
+            <label for="signup-confirm-password">Confirm Password</label>
+            <input type="password" id="signup-confirm-password" required>
+          </div>
+          <button type="submit" class="btn btn-primary btn-large">Sign Up</button>
+        </form>
+        <div class="auth-switch">
+          Already have an account? <a href="#" onclick="switchToLogin()">Login</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Profile Modal -->
+  <div id="user-profile-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>User Profile</h2>
+        <button class="modal-close" onclick="closeModal('user-profile-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="profile-header">
+          <div class="profile-avatar" id="profile-avatar">U</div>
+          <div class="profile-info">
+            <h3 id="profile-username">Username</h3>
+            <div class="profile-level" id="profile-level-display">Level 1 - Rookie</div>
+          </div>
+        </div>
+        <div class="profile-stats">
+          <div class="stat-row">
+            <span>XP:</span>
+            <span id="profile-xp">0</span>
+          </div>
+          <div class="stat-row">
+            <span>Total Predictions:</span>
+            <span id="profile-total-predictions">0</span>
+          </div>
+          <div class="stat-row">
+            <span>Correct Predictions:</span>
+            <span id="profile-correct-predictions">0</span>
+          </div>
+          <div class="stat-row">
+            <span>Accuracy:</span>
+            <span id="profile-accuracy">0%</span>
+          </div>
+          <div class="stat-row">
+            <span>Points:</span>
+            <span id="profile-points">0</span>
+          </div>
+        </div>
+        <div class="xp-progress">
+          <div class="xp-bar">
+            <div class="xp-fill" id="xp-fill"></div>
+          </div>
+          <div class="xp-text" id="xp-text">0 / 100 XP</div>
         </div>
       </div>
     </div>

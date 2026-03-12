@@ -56,6 +56,598 @@ let refreshTimerId = null;
 let allFighters = [];
 let currentEvents = [];
 let countdownIntervals = new Map();
+let currentUser = null;
+let allPredictions = [];
+let allUsers = [];
+
+// ===== Hardcoded Fallback Events =====
+const HARDCODED_FALLBACK_EVENTS = [
+  {
+    id: "ufc-308-2024-03-15",
+    name: "UFC 308: Makhachev vs. Volkanovski 2",
+    date: "2024-03-15T22:00:00Z",
+    location: "T-Mobile Arena, Las Vegas, NV",
+    fights: [
+      {
+        fighterA: {
+          name: "Islam Makhachev",
+          record: "25-1-0",
+          weightLbs: 155,
+          height: "5'10\"",
+          reach: "70\"",
+          stance: "Southpaw",
+          country: "Russia",
+          imageUrl: null,
+          koPct: 0.65,
+          subPct: 0.25,
+          decPct: 0.10
+        },
+        fighterB: {
+          name: "Alexander Volkanovski",
+          record: "26-2-0",
+          weightLbs: 145,
+          height: "5'6\"",
+          reach: "71\"",
+          stance: "Southpaw",
+          country: "Australia",
+          imageUrl: null,
+          koPct: 0.55,
+          subPct: 0.20,
+          decPct: 0.25
+        },
+        weightClass: "Lightweight"
+      },
+      {
+        fighterA: {
+          name: "Leon Edwards",
+          record: "21-3-0",
+          weightLbs: 170,
+          height: "5'9\"",
+          reach: "74\"",
+          stance: "Southpaw",
+          country: "England",
+          imageUrl: null,
+          koPct: 0.45,
+          subPct: 0.15,
+          decPct: 0.40
+        },
+        fighterB: {
+          name: "Belal Muhammad",
+          record: "23-3-0",
+          weightLbs: 170,
+          height: "5'8\"",
+          reach: "71\"",
+          stance: "Orthodox",
+          country: "USA",
+          imageUrl: null,
+          koPct: 0.40,
+          subPct: 0.10,
+          decPct: 0.50
+        },
+        weightClass: "Welterweight"
+      }
+    ]
+  },
+  {
+    id: "ufc-fight-night-2024-03-20",
+    name: "UFC Fight Night: Ladd vs. Dumont",
+    date: "2024-03-20T20:00:00Z",
+    location: "United Center, Chicago, IL",
+    fights: [
+      {
+        fighterA: {
+          name: "Julianna Pena",
+          record: "11-5-0",
+          weightLbs: 135,
+          height: "5'7\"",
+          reach: "66\"",
+          stance: "Orthodox",
+          country: "USA",
+          imageUrl: null,
+          koPct: 0.40,
+          subPct: 0.35,
+          decPct: 0.25
+        },
+        fighterB: {
+          name: "Raquel Pennington",
+          record: "15-8-0",
+          weightLbs: 135,
+          height: "5'7\"",
+          reach: "68\"",
+          stance: "Orthodox",
+          country: "USA",
+          imageUrl: null,
+          koPct: 0.35,
+          subPct: 0.30,
+          decPct: 0.35
+        },
+        weightClass: "Women's Bantamweight"
+      },
+      {
+        fighterA: {
+          name: "Anthony Smith",
+          record: "37-18-0",
+          weightLbs: 205,
+          height: "6'4\"",
+          reach: "78\"",
+          stance: "Orthodox",
+          country: "USA",
+          imageUrl: null,
+          koPct: 0.55,
+          subPct: 0.20,
+          decPct: 0.25
+        },
+        fighterB: {
+          name: "Dominick Reyes",
+          record: "13-4-0",
+          weightLbs: 205,
+          height: "6'4\"",
+          reach: "76\"",
+          stance: "Orthodox",
+          country: "USA",
+          imageUrl: null,
+          koPct: 0.50,
+          subPct: 0.15,
+          decPct: 0.35
+        },
+        weightClass: "Light Heavyweight"
+      }
+    ]
+  },
+  {
+    id: "ufc-309-2024-03-25",
+    name: "UFC 309: Jones vs. Miocic",
+    date: "2024-03-25T22:00:00Z",
+    location: "Madison Square Garden, New York, NY",
+    fights: [
+      {
+        fighterA: {
+          name: "Jon Jones",
+          record: "27-1-0",
+          weightLbs: 265,
+          height: "6'4\"",
+          reach: "84.5\"",
+          stance: "Orthodox",
+          country: "USA",
+          imageUrl: null,
+          koPct: 0.60,
+          subPct: 0.15,
+          decPct: 0.25
+        },
+        fighterB: {
+          name: "Stipe Miocic",
+          record: "20-4-0",
+          weightLbs: 265,
+          height: "6'4\"",
+          reach: "80\"",
+          stance: "Orthodox",
+          country: "USA",
+          imageUrl: null,
+          koPct: 0.55,
+          subPct: 0.10,
+          decPct: 0.35
+        },
+        weightClass: "Heavyweight"
+      },
+      {
+        fighterA: {
+          name: "Zhang Weili",
+          record: "24-3-0",
+          weightLbs: 115,
+          height: "5'8\"",
+          reach: "63\"",
+          stance: "Southpaw",
+          country: "China",
+          imageUrl: null,
+          koPct: 0.35,
+          subPct: 0.40,
+          decPct: 0.25
+        },
+        fighterB: {
+          name: "Xiaonan Yan",
+          record: "17-3-0",
+          weightLbs: 115,
+          height: "5'4\"",
+          reach: "64\"",
+          stance: "Orthodox",
+          country: "China",
+          imageUrl: null,
+          koPct: 0.40,
+          subPct: 0.35,
+          decPct: 0.25
+        },
+        weightClass: "Women's Strawweight"
+      }
+    ]
+  }
+];
+
+// ===== User Account System =====
+
+// DOM references for authentication
+const loginBtn = document.getElementById("login-btn");
+const signupBtn = document.getElementById("signup-btn");
+const userProfile = document.getElementById("user-profile");
+const authButtons = document.getElementById("auth-buttons");
+const userAvatar = document.getElementById("user-avatar");
+const userName = document.getElementById("user-name");
+const userLevel = document.getElementById("user-level");
+const userMenuBtn = document.getElementById("user-menu-btn");
+const userMenu = document.getElementById("user-menu");
+const viewProfileBtn = document.getElementById("view-profile-btn");
+const logoutBtn = document.getElementById("logout-btn");
+
+// Initialize account system
+function initializeAccountSystem() {
+  // Load users and predictions from localStorage
+  loadUsers();
+  loadPredictions();
+  
+  // Check for logged in user
+  const savedUser = localStorage.getItem('currentUser');
+  if (savedUser) {
+    currentUser = JSON.parse(savedUser);
+    showUserProfile();
+  } else {
+    showAuthButtons();
+  }
+  
+  // Event listeners
+  loginBtn.addEventListener("click", () => openModal('login-modal'));
+  signupBtn.addEventListener("click", () => openModal('signup-modal'));
+  userMenuBtn.addEventListener("click", toggleUserMenu);
+  viewProfileBtn.addEventListener("click", () => openModal('user-profile-modal'));
+  logoutBtn.addEventListener("click", logout);
+  
+  // Form submissions
+  document.getElementById('login-form').addEventListener('submit', handleLogin);
+  document.getElementById('signup-form').addEventListener('submit', handleSignup);
+  
+  // Close user menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!userProfile.contains(e.target)) {
+      userMenu.classList.add('hidden');
+    }
+  });
+}
+
+function loadUsers() {
+  const savedUsers = localStorage.getItem('users');
+  if (savedUsers) {
+    allUsers = JSON.parse(savedUsers);
+  } else {
+    // Create demo users for testing
+    allUsers = [
+      {
+        username: "MMAAnalyst92",
+        email: "analyst@demo.com",
+        password: "demo123",
+        xp: 1250,
+        level: 5,
+        totalPredictions: 50,
+        correctPredictions: 42,
+        points: 1250,
+        createdAt: new Date().toISOString()
+      },
+      {
+        username: "FightFan23",
+        email: "fan@demo.com",
+        password: "demo123",
+        xp: 1180,
+        level: 4,
+        totalPredictions: 50,
+        correctPredictions: 38,
+        points: 1180,
+        createdAt: new Date().toISOString()
+      },
+      {
+        username: "OctaKing",
+        email: "king@demo.com",
+        password: "demo123",
+        xp: 1050,
+        level: 4,
+        totalPredictions: 50,
+        correctPredictions: 35,
+        points: 1050,
+        createdAt: new Date().toISOString()
+      }
+    ];
+    saveUsers();
+  }
+}
+
+function loadPredictions() {
+  const savedPredictions = localStorage.getItem('predictions');
+  if (savedPredictions) {
+    allPredictions = JSON.parse(savedPredictions);
+  } else {
+    // Create demo predictions
+    allPredictions = [];
+    savePredictions();
+  }
+}
+
+function saveUsers() {
+  localStorage.setItem('users', JSON.stringify(allUsers));
+}
+
+function savePredictions() {
+  localStorage.setItem('predictions', JSON.stringify(allPredictions));
+}
+
+function handleLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  
+  const user = allUsers.find(u => u.email === email && u.password === password);
+  
+  if (user) {
+    currentUser = user;
+    localStorage.setItem('currentUser', JSON.stringify(user));
+    showUserProfile();
+    closeModal('login-modal');
+    showNotification('Login successful!');
+  } else {
+    showNotification('Invalid email or password');
+  }
+}
+
+function handleSignup(e) {
+  e.preventDefault();
+  const username = document.getElementById('signup-username').value;
+  const email = document.getElementById('signup-email').value;
+  const password = document.getElementById('signup-password').value;
+  const confirmPassword = document.getElementById('signup-confirm-password').value;
+  
+  if (password !== confirmPassword) {
+    showNotification('Passwords do not match');
+    return;
+  }
+  
+  if (allUsers.find(u => u.email === email)) {
+    showNotification('Email already exists');
+    return;
+  }
+  
+  if (allUsers.find(u => u.username === username)) {
+    showNotification('Username already exists');
+    return;
+  }
+  
+  const newUser = {
+    username,
+    email,
+    password,
+    xp: 0,
+    level: 1,
+    totalPredictions: 0,
+    correctPredictions: 0,
+    points: 0,
+    createdAt: new Date().toISOString()
+  };
+  
+  allUsers.push(newUser);
+  saveUsers();
+  
+  currentUser = newUser;
+  localStorage.setItem('currentUser', JSON.stringify(newUser));
+  showUserProfile();
+  closeModal('signup-modal');
+  showNotification('Account created successfully!');
+}
+
+function logout() {
+  currentUser = null;
+  localStorage.removeItem('currentUser');
+  showAuthButtons();
+  userMenu.classList.add('hidden');
+  showNotification('Logged out successfully');
+}
+
+function showUserProfile() {
+  authButtons.classList.add('hidden');
+  userProfile.classList.remove('hidden');
+  
+  userName.textContent = currentUser.username;
+  userLevel.textContent = `Level ${currentUser.level}`;
+  userAvatar.textContent = currentUser.username.charAt(0).toUpperCase();
+  
+  updateUserProfileModal();
+}
+
+function showAuthButtons() {
+  authButtons.classList.remove('hidden');
+  userProfile.classList.add('hidden');
+}
+
+function toggleUserMenu() {
+  userMenu.classList.toggle('hidden');
+}
+
+function updateUserProfileModal() {
+  if (!currentUser) return;
+  
+  document.getElementById('profile-username').textContent = currentUser.username;
+  document.getElementById('profile-level-display').textContent = `Level ${currentUser.level} - getLevelName(currentUser.level)`;
+  document.getElementById('profile-xp').textContent = currentUser.xp;
+  document.getElementById('profile-total-predictions').textContent = currentUser.totalPredictions;
+  document.getElementById('profile-correct-predictions').textContent = currentUser.correctPredictions;
+  document.getElementById('profile-accuracy').textContent = currentUser.totalPredictions > 0 ? 
+    `${Math.round((currentUser.correctPredictions / currentUser.totalPredictions) * 100)}%` : '0%';
+  document.getElementById('profile-points').textContent = currentUser.points;
+  
+  // Update XP progress
+  const currentLevelXP = (currentUser.level - 1) * 100;
+  const nextLevelXP = currentUser.level * 100;
+  const currentXP = currentUser.xp - currentLevelXP;
+  const neededXP = nextLevelXP - currentLevelXP;
+  const progress = (currentXP / neededXP) * 100;
+  
+  document.getElementById('xp-fill').style.width = `${progress}%`;
+  document.getElementById('xp-text').textContent = `${currentXP} / ${neededXP} XP`;
+  document.getElementById('profile-avatar').textContent = currentUser.username.charAt(0).toUpperCase();
+}
+
+function getLevelName(level) {
+  const levelNames = {
+    1: "Rookie",
+    2: "Contender", 
+    3: "Challenger",
+    4: "Prospect",
+    5: "Champion",
+    6: "Legend"
+  };
+  return levelNames[Math.min(level, 6)] || "Legend";
+}
+
+function addXP(amount) {
+  if (!currentUser) return;
+  
+  currentUser.xp += amount;
+  const newLevel = Math.floor(currentUser.xp / 100) + 1;
+  
+  if (newLevel > currentUser.level) {
+    currentUser.level = newLevel;
+    showNotification(`Level up! You are now Level ${newLevel} - ${getLevelName(newLevel)}`);
+  }
+  
+  currentUser.points = currentUser.xp;
+  saveCurrentUser();
+  updateUserProfileModal();
+}
+
+function saveCurrentUser() {
+  if (currentUser) {
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    
+    // Update user in allUsers array
+    const userIndex = allUsers.findIndex(u => u.email === currentUser.email);
+    if (userIndex !== -1) {
+      allUsers[userIndex] = currentUser;
+      saveUsers();
+    }
+  }
+}
+
+// ===== Prediction System =====
+
+function addPredictionToFightCard(fight, fightElement) {
+  const predictionCard = document.createElement("div");
+  predictionCard.className = "prediction-card";
+  
+  if (!currentUser) {
+    predictionCard.innerHTML = `
+      <div class="login-required">
+        <a href="#" onclick="openModal('login-modal')">Log in to submit predictions</a>
+      </div>
+    `;
+    return predictionCard;
+  }
+  
+  // Check if user already predicted this fight
+  const existingPrediction = allPredictions.find(p => 
+    p.username === currentUser.username && 
+    p.fighterA === fight.fighterA.name && 
+    p.fighterB === fight.fighterB.name
+  );
+  
+  predictionCard.innerHTML = `
+    <div class="prediction-header">Make Your Prediction</div>
+    <div class="prediction-options">
+      <div class="prediction-option ${existingPrediction?.selectedWinner === fight.fighterA.name ? 'selected' : ''}" data-fighter="${fight.fighterA.name}">
+        ${fight.fighterA.name}
+      </div>
+      <div class="prediction-option ${existingPrediction?.selectedWinner === fight.fighterB.name ? 'selected' : ''}" data-fighter="${fight.fighterB.name}">
+        ${fight.fighterB.name}
+      </div>
+    </div>
+    <button class="prediction-submit" ${existingPrediction ? 'disabled' : ''}>
+      ${existingPrediction ? 'Prediction Submitted' : 'Submit Prediction'}
+    </button>
+  `;
+  
+  // Add event listeners
+  const options = predictionCard.querySelectorAll('.prediction-option');
+  const submitBtn = predictionCard.querySelector('.prediction-submit');
+  let selectedWinner = null;
+  
+  options.forEach(option => {
+    option.addEventListener('click', () => {
+      if (existingPrediction) return;
+      
+      options.forEach(opt => opt.classList.remove('selected'));
+      option.classList.add('selected');
+      selectedWinner = option.dataset.fighter;
+    });
+  });
+  
+  submitBtn.addEventListener('click', () => {
+    if (!selectedWinner || existingPrediction) return;
+    
+    submitPrediction(fight, selectedWinner);
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Prediction Submitted';
+    addXP(10); // +10 XP for submitting prediction
+  });
+  
+  return predictionCard;
+}
+
+function submitPrediction(fight, selectedWinner) {
+  const prediction = {
+    username: currentUser.username,
+    eventName: fight.eventName,
+    fightId: `${fight.fighterA.name}-vs-${fight.fighterB.name}`,
+    fighterA: fight.fighterA.name,
+    fighterB: fight.fighterB.name,
+    selectedWinner: selectedWinner,
+    timestamp: new Date().toISOString(),
+    status: 'pending'
+  };
+  
+  allPredictions.push(prediction);
+  savePredictions();
+  
+  currentUser.totalPredictions++;
+  saveCurrentUser();
+  
+  showNotification('Prediction submitted successfully!');
+  updateLeaderboard();
+}
+
+// ===== Demo Result Resolution =====
+
+function resolveDemoResults() {
+  // Demo results for testing
+  const demoResults = [
+    { fightId: "Fighter A-vs-Fighter B", winner: "Fighter A" },
+    { fightId: "Fighter C-vs-Fighter D", winner: "Fighter D" },
+    { fightId: "Fighter E-vs-Fighter F", winner: "Fighter E" }
+  ];
+  
+  allPredictions.forEach(prediction => {
+    if (prediction.status === 'pending') {
+      const result = demoResults.find(r => r.fightId === prediction.fightId);
+      if (result) {
+        prediction.status = (prediction.selectedWinner === result.winner) ? 'correct' : 'wrong';
+        
+        // Award XP for resolved predictions
+        if (prediction.username === currentUser.username) {
+          if (prediction.status === 'correct') {
+            currentUser.correctPredictions++;
+            addXP(25); // +25 XP for correct prediction
+          } else {
+            addXP(5); // +5 XP for wrong prediction
+          }
+        }
+      }
+    }
+  });
+  
+  savePredictions();
+  updateLeaderboard();
+}
 
 // ===== Utilities =====
 
@@ -71,22 +663,120 @@ function clamp(num, min, max) {
 function getInitials(name) {
   return name
     .split(" ")
-    .map((part) => part.charAt(0))
-    .join("")
-    .toUpperCase()
-    .slice(0, 3);
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("");
 }
 
 function parseRecord(record) {
-  if (!record) {
-    return { wins: 0, losses: 0, draws: 0, total: 0 };
+  const parts = record.split("-");
+  return {
+    wins: parseInt(parts[0], 10) || 0,
+    losses: parseInt(parts[1], 10) || 0,
+    draws: parseInt(parts[2], 10) || 0,
+    total: parts.reduce((sum, part) => sum + parseInt(part, 10) || 0, 0),
+  };
+}
+
+// Modal utilities
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.remove('hidden');
   }
-  const parts = record.split("-").map((p) => parseInt(p.trim(), 10));
-  const wins = Number.isFinite(parts[0]) ? parts[0] : 0;
-  const losses = Number.isFinite(parts[1]) ? parts[1] : 0;
-  const draws = Number.isFinite(parts[2]) ? parts[2] : 0;
-  const total = wins + losses + draws;
-  return { wins, losses, draws, total };
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+function switchToSignup() {
+  closeModal('login-modal');
+  openModal('signup-modal');
+}
+
+function switchToLogin() {
+  closeModal('signup-modal');
+  openModal('login-modal');
+}
+
+function showNotification(message) {
+  // Simple notification system
+  const notification = document.createElement('div');
+  notification.className = 'notification';
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    color: var(--bg-dark);
+    padding: 12px 20px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    z-index: 10000;
+    animation: slideIn 0.3s ease-out;
+  `;
+  
+  document.body.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease-out';
+    setTimeout(() => {
+      document.body.removeChild(notification);
+    }, 300);
+  }, 3000);
+}
+
+// Add notification animations
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+`;
+document.head.appendChild(style);
+
+function estimateFinishProfile(weightLbs, winPct) {
+  const w = Number.parseInt(weightLbs, 10) || 170;
+  const win = clamp(winPct, 0, 1);
+
+  // Baseline by division (heavier -> more KO, lighter -> more decisions/subs)
+  let baseKo, baseSub, baseDec;
+  if (w >= 205) {
+    baseKo = 0.55;
+    baseSub = 0.15;
+    baseDec = 0.3;
+  } else if (w >= 170) {
+    baseKo = 0.45;
+    baseSub = 0.2;
+    baseDec = 0.35;
+  } else if (w >= 155) {
+    baseKo = 0.35;
+    baseSub = 0.25;
+    baseDec = 0.4;
+  } else {
+    baseKo = 0.25;
+    baseSub = 0.3;
+    baseDec = 0.45;
+  }
+
+  // Adjust by win rate (higher win -> more finishes)
+  const finishBonus = win * 0.15;
+  const decPenalty = finishBonus * 0.5;
+
+  return {
+    koPct: clamp(baseKo + finishBonus, 0.1, 0.7),
+    subPct: clamp(baseSub + finishBonus * 0.8, 0.05, 0.4),
+    decPct: clamp(baseDec - decPenalty, 0.2, 0.6),
+  };
 }
 
 // Countdown timer utility
@@ -969,6 +1659,11 @@ function renderFightCard(fight) {
   actions.appendChild(shareBtn);
   
   right.append(actions);
+  
+  // Add prediction card
+  const predictionCard = addPredictionToFightCard(fight, card);
+  right.append(predictionCard);
+  
   card.append(left, right);
 
   return card;
@@ -1137,53 +1832,171 @@ function initializeLeaderboard() {
       updateLeaderboardContent(period);
     });
   });
+  
+  // Add functionality to action buttons
+  const joinCompetitionBtn = document.querySelector('.leaderboard-actions .btn-primary');
+  const viewAllRankingsBtn = document.querySelector('.leaderboard-actions .btn-secondary');
+  
+  if (joinCompetitionBtn) {
+    joinCompetitionBtn.addEventListener('click', () => {
+      if (!currentUser) {
+        openModal('login-modal');
+      } else {
+        // Scroll to events section
+        document.getElementById('events-section').scrollIntoView({ behavior: 'smooth' });
+        showNotification('Start predicting fights to climb the leaderboard!');
+      }
+    });
+  }
+  
+  if (viewAllRankingsBtn) {
+    viewAllRankingsBtn.addEventListener('click', () => {
+      // Expand leaderboard to show more users
+      const currentData = getLeaderboardData('all-time');
+      const rankingsContainer = document.querySelector('.leaderboard-rankings');
+      
+      if (rankingsContainer) {
+        rankingsContainer.innerHTML = '';
+        
+        // Show top 20 users instead of top 5
+        const expandedData = currentData.slice(0, 20);
+        
+        expandedData.forEach((user, index) => {
+          const item = document.createElement('div');
+          item.className = 'leaderboard-item';
+          item.innerHTML = `
+            <div class="rank">${index + 1}</div>
+            <div class="user-info">
+              <div class="username">${user.username}</div>
+              <div class="user-stats">${user.correctPredictions}/${user.totalPredictions} correct • ${user.accuracy}% accuracy</div>
+            </div>
+            <div class="user-score">${user.points} pts</div>
+          `;
+          rankingsContainer.appendChild(item);
+        });
+        
+        showNotification('Showing top 20 users');
+      }
+    });
+  }
 }
 
 function updateLeaderboardContent(period) {
-  // Simulated leaderboard data for different periods
-  const leaderboardData = {
-    weekly: [
-      { rank: 1, username: "MMAAnalyst92", stats: "42/50 correct • 84% accuracy", score: "1,250 pts" },
-      { rank: 2, username: "FightFan23", stats: "38/50 correct • 76% accuracy", score: "1,180 pts" },
-      { rank: 3, username: "OctaKing", stats: "35/50 correct • 70% accuracy", score: "1,050 pts" },
-      { rank: 4, username: "BetMaster", stats: "33/50 correct • 66% accuracy", score: "990 pts" },
-      { rank: 5, username: "UFCProphet", stats: "31/50 correct • 62% accuracy", score: "930 pts" }
-    ],
-    monthly: [
-      { rank: 1, username: "PredictionGuru", stats: "156/200 correct • 78% accuracy", score: "4,680 pts" },
-      { rank: 2, username: "MMAAnalyst92", stats: "142/200 correct • 71% accuracy", score: "4,260 pts" },
-      { rank: 3, username: "FightFan23", stats: "138/200 correct • 69% accuracy", score: "4,140 pts" },
-      { rank: 4, username: "OctaKing", stats: "125/200 correct • 62.5% accuracy", score: "3,750 pts" },
-      { rank: 5, username: "BetMaster", stats: "118/200 correct • 59% accuracy", score: "3,540 pts" }
-    ],
-    'all-time': [
-      { rank: 1, username: "PredictionGuru", stats: "892/1200 correct • 74.3% accuracy", score: "26,760 pts" },
-      { rank: 2, username: "MMAAnalyst92", stats: "845/1200 correct • 70.4% accuracy", score: "25,350 pts" },
-      { rank: 3, username: "FightFan23", stats: "798/1200 correct • 66.5% accuracy", score: "23,940 pts" },
-      { rank: 4, username: "OctaKing", stats: "756/1200 correct • 63% accuracy", score: "22,680 pts" },
-      { rank: 5, username: "BetMaster", stats: "712/1200 correct • 59.3% accuracy", score: "21,360 pts" }
-    ]
-  };
-  
-  const data = leaderboardData[period] || leaderboardData.weekly;
+  // Get leaderboard data based on period
+  const leaderboardData = getLeaderboardData(period);
   const rankingsContainer = document.querySelector('.leaderboard-rankings');
   
   if (rankingsContainer) {
     rankingsContainer.innerHTML = '';
     
-    data.forEach(user => {
+    leaderboardData.forEach((user, index) => {
       const item = document.createElement('div');
       item.className = 'leaderboard-item';
       item.innerHTML = `
-        <div class="rank">${user.rank}</div>
+        <div class="rank">${index + 1}</div>
         <div class="user-info">
           <div class="username">${user.username}</div>
-          <div class="user-stats">${user.stats}</div>
+          <div class="user-stats">${user.correctPredictions}/${user.totalPredictions} correct • ${user.accuracy}% accuracy</div>
         </div>
-        <div class="user-score">${user.score}</div>
+        <div class="user-score">${user.points} pts</div>
       `;
       rankingsContainer.appendChild(item);
     });
+  }
+}
+
+function getLeaderboardData(period) {
+  const now = new Date();
+  let filteredPredictions = allPredictions;
+  
+  // Filter predictions by period
+  if (period === 'weekly') {
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    filteredPredictions = allPredictions.filter(p => new Date(p.timestamp) > weekAgo);
+  } else if (period === 'monthly') {
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    filteredPredictions = allPredictions.filter(p => new Date(p.timestamp) > monthAgo);
+  }
+  
+  // Calculate user stats for this period
+  const userStats = {};
+  
+  filteredPredictions.forEach(prediction => {
+    if (!userStats[prediction.username]) {
+      userStats[prediction.username] = {
+        username: prediction.username,
+        totalPredictions: 0,
+        correctPredictions: 0,
+        points: 0
+      };
+    }
+    
+    userStats[prediction.username].totalPredictions++;
+    
+    if (prediction.status === 'correct') {
+      userStats[prediction.username].correctPredictions++;
+      userStats[prediction.username].points += 25; // 25 points per correct prediction
+    } else if (prediction.status === 'wrong') {
+      userStats[prediction.username].points += 5; // 5 points per wrong prediction
+    } else {
+      userStats[prediction.username].points += 10; // 10 points per submission
+    }
+  });
+  
+  // Convert to array and calculate accuracy
+  const leaderboardArray = Object.values(userStats).map(user => ({
+    ...user,
+    accuracy: user.totalPredictions > 0 ? Math.round((user.correctPredictions / user.totalPredictions) * 100) : 0
+  }));
+  
+  // Sort by points, then by accuracy, then by total predictions
+  leaderboardArray.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    if (b.accuracy !== a.accuracy) return b.accuracy - a.accuracy;
+    return b.totalPredictions - a.totalPredictions;
+  });
+  
+  // If no data for this period, use demo data
+  if (leaderboardArray.length === 0) {
+    return getDemoLeaderboardData(period);
+  }
+  
+  return leaderboardArray;
+}
+
+function getDemoLeaderboardData(period) {
+  // Demo data for when no real predictions exist
+  const demoData = {
+    weekly: [
+      { username: "MMAAnalyst92", totalPredictions: 50, correctPredictions: 42, accuracy: 84, points: 1250 },
+      { username: "FightFan23", totalPredictions: 50, correctPredictions: 38, accuracy: 76, points: 1180 },
+      { username: "OctaKing", totalPredictions: 50, correctPredictions: 35, accuracy: 70, points: 1050 },
+      { username: "BetMaster", totalPredictions: 50, correctPredictions: 33, accuracy: 66, points: 990 },
+      { username: "UFCProphet", totalPredictions: 50, correctPredictions: 31, accuracy: 62, points: 930 }
+    ],
+    monthly: [
+      { username: "PredictionGuru", totalPredictions: 200, correctPredictions: 156, accuracy: 78, points: 4680 },
+      { username: "MMAAnalyst92", totalPredictions: 200, correctPredictions: 142, accuracy: 71, points: 4260 },
+      { username: "FightFan23", totalPredictions: 200, correctPredictions: 138, accuracy: 69, points: 4140 },
+      { username: "OctaKing", totalPredictions: 200, correctPredictions: 125, accuracy: 62.5, points: 3750 },
+      { username: "BetMaster", totalPredictions: 200, correctPredictions: 118, accuracy: 59, points: 3540 }
+    ],
+    'all-time': [
+      { username: "PredictionGuru", totalPredictions: 1200, correctPredictions: 892, accuracy: 74.3, points: 26760 },
+      { username: "MMAAnalyst92", totalPredictions: 1200, correctPredictions: 845, accuracy: 70.4, points: 25350 },
+      { username: "FightFan23", totalPredictions: 1200, correctPredictions: 798, accuracy: 66.5, points: 23940 },
+      { username: "OctaKing", totalPredictions: 1200, correctPredictions: 756, accuracy: 63, points: 22680 },
+      { username: "BetMaster", totalPredictions: 1200, correctPredictions: 712, accuracy: 59.3, points: 21360 }
+    ]
+  };
+  
+  return demoData[period] || demoData.weekly;
+}
+
+function updateLeaderboard() {
+  const activeTab = document.querySelector('.leaderboard-tab.active');
+  if (activeTab) {
+    updateLeaderboardContent(activeTab.dataset.period);
   }
 }
 
@@ -1416,99 +2229,281 @@ function populateFighterDropdowns(fighters) {
 // ===== Data Fetching =====
 
 async function fetchUpcomingEvents() {
+  console.log('🚀 Starting event fetch...');
+  showLoadingState();
+  hideStatusBanner();
+  
   try {
-    const res = await fetch(MMA_API_URL);
-    if (!res.ok) {
-      throw new Error(`API error: ${res.status}`);
+    // STEP 1: Render hardcoded fallback events immediately
+    console.log('🎯 Rendering hardcoded fallback events immediately...');
+    await renderHardcodedEvents();
+    
+    // STEP 2: Try to load local fallback file
+    console.log('📁 Attempting to load local fallback file...');
+    const localFallback = await loadLocalFallback();
+    
+    // STEP 3: Try to fetch live UFC API
+    console.log('📡 Attempting to fetch from live API:', MMA_API_URL);
+    const liveEvents = await fetchLiveAPI();
+    
+    // STEP 4: Use live data if successful, otherwise keep fallback
+    if (liveEvents && liveEvents.length > 0) {
+      console.log('✅ Live API successful, replacing with live data');
+      const processedEvents = await processEvents(liveEvents);
+      renderEvents(processedEvents);
+      hideStatusBanner();
+    } else if (localFallback && localFallback.length > 0) {
+      console.log('📁 Using local fallback file data');
+      const processedEvents = await processEvents(localFallback);
+      renderEvents(processedEvents);
+      showStatusBanner();
+    } else {
+      console.log('🎯 Keeping hardcoded fallback events');
+      showStatusBanner();
     }
-    const data = await res.json();
-    const rawEvents = Array.isArray(data.data) ? data.data : [];
-
-    // Filter down to upcoming UFC events only
-    const ufcEventsRaw = rawEvents.filter((ev) =>
-      ev.title && ev.title.toUpperCase().startsWith("UFC ")
-    );
-
-    if (!ufcEventsRaw.length) {
-      setLiveStatus("Live feed OK, but no upcoming UFC cards found.", "error");
-      return [];
-    }
-
-    // Collect all fighters for search and simulator
-    allFighters = [];
-
-    const events = ufcEventsRaw.map((ev, index) => {
-      const fights =
-        (ev.fights || []).map((fight, i) => {
-          const weightLbs = fight.weight || "";
-          const fighterA = buildFighterFromApi(
-            fight.fighterA || {},
-            weightLbs,
-            !!fight.main
-          );
-          const fighterB = buildFighterFromApi(
-            fight.fighterB || {},
-            weightLbs,
-            !!fight.main
-          );
-
-          // Add fighters to global list
-          allFighters.push(fighterA, fighterB);
-
-          return {
-            id: `${index}-${i}`,
-            main: !!fight.main,
-            weightLbs,
-            fighterA,
-            fighterB
-          };
-        }) || [];
-
-      return {
-        id: ev.link || String(index),
-        name: ev.title || "UFC Event",
-        dateText: ev.date || "Date TBA",
-        fights
-      };
-    });
-
-    // Remove duplicate fighters
-    allFighters = allFighters.filter((fighter, index, self) => 
-      index === self.findIndex(f => f.name === fighter.name)
-    );
-
-    // Populate fighter dropdowns
-    populateFighterDropdowns(allFighters);
-
-    return events;
-  } catch (err) {
-    console.error("Failed to fetch MMA events:", err);
-    setLiveStatus(
-      "Live UFC data unavailable. Check your connection or try again later.",
-      "error"
-    );
-    return [];
+    
+    hideLoadingState();
+    
+  } catch (error) {
+    console.error('❌ Event loading failed:', error);
+    console.log('🎯 Keeping hardcoded fallback events');
+    showStatusBanner();
+    hideLoadingState();
   }
 }
 
-async function refreshData() {
-  setLiveStatus("Scanning upcoming UFC events...", "loading");
-  refreshBtn.disabled = true;
+async function renderHardcodedEvents() {
+  console.log('🎯 Rendering hardcoded fallback events...');
+  const processedEvents = await processEvents(HARDCODED_FALLBACK_EVENTS);
+  renderEvents(processedEvents);
+  console.log(`✅ Rendered ${processedEvents.length} hardcoded events`);
+}
 
+async function loadLocalFallback() {
   try {
-    const events = await fetchUpcomingEvents();
-    currentEvents = events;
-    renderEvents(events);
+    console.log('📁 Loading local fallback from ./data/fallback-events.json');
+    const response = await fetch('./data/fallback-events.json');
+    console.log('📁 Local fallback response status:', response.status);
     
-    if (events.length > 0) {
-      setLiveStatus("Live UFC feed synced", "live");
+    if (!response.ok) {
+      throw new Error(`Local fallback failed: ${response.status}`);
     }
-  } catch (err) {
-    console.error(err);
-    setLiveStatus(
-      "Unexpected error while updating UFC feed.",
-      "error"
-    );
+    
+    const data = await response.json();
+    const events = data.events || [];
+    console.log('📁 Local fallback events loaded:', events.length);
+    return events;
+    
+  } catch (error) {
+    console.error('❌ Local fallback failed:', error);
+    return null;
+  }
+}
+
+async function fetchLiveAPI() {
+  try {
+    const response = await fetch(MMA_API_URL);
+    console.log('📡 Live API response status:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log('📡 Raw live API response:', data);
+    
+    // Normalize response data
+    const events = normalizeApiResponse(data);
+    console.log('📡 Normalized live events count:', events.length);
+    
+    // Filter for UFC events
+    const ufcEvents = filterUFCEvents(events);
+    console.log('🥊 UFC events found in live API:', ufcEvents.length);
+    
+    return ufcEvents;
+    
+  } catch (error) {
+    console.error('❌ Live API fetch failed:', error);
+    return null;
+  }
+}
+
+function normalizeApiResponse(data) {
+  // Handle different response formats
+  let events = [];
+  
+  if (Array.isArray(data)) {
+    events = data;
+  } else if (data && typeof data === 'object') {
+    // Try common nested formats
+    events = data.events || data.data || data.results || [];
+  }
+  
+  console.log('📝 Normalized events from response:', events.length);
+  return events;
+}
+
+function filterUFCEvents(events) {
+  const ufcEvents = events.filter(event => {
+    if (!event) return false;
+    
+    // Check multiple UFC-related fields with case-insensitive matching
+    const name = (event.name || event.title || event.eventName || '').toLowerCase();
+    const league = (event.league || event.organization || event.org || '').toLowerCase();
+    const sport = (event.sport || '').toLowerCase();
+    
+    // Flexible UFC matching
+    const isUFC = name.includes('ufc') || 
+                  name.includes('ultimate fighting championship') ||
+                  league.includes('ufc') ||
+                  league.includes('ultimate fighting championship') ||
+                  sport === 'mma' ||
+                  name.includes('fight night');
+    
+    if (isUFC) {
+      console.log('🥊 UFC event found:', name);
+    }
+    
+    return isUFC;
+  });
+  
+  return ufcEvents;
+}
+
+async function processEvents(events) {
+  console.log('⚙️ Processing', events.length, 'events...');
+  
+  const processedEvents = [];
+  const allFightersList = [];
+  
+  for (const event of events) {
+    try {
+      // Build event object with fallback values
+      const eventObj = {
+        id: event.id || event.eventId || `event-${Date.now()}`,
+        name: event.name || event.title || event.eventName || 'UFC Event',
+        date: event.date || event.eventDate || new Date().toISOString(),
+        location: event.location || event.venue || 'TBA',
+        fights: []
+      };
+      
+      // Process fights
+      if (event.fights && Array.isArray(event.fights)) {
+        eventObj.fights = event.fights.map(fight => {
+          const fighterA = buildFighterFromApi(fight.fighterA || fight.fighter_a || fight.fighter1);
+          const fighterB = buildFighterFromApi(fight.fighterB || fight.fighter_b || fight.fighter2);
+          
+          // Add to fighters list
+          allFightersList.push(fighterA, fighterB);
+          
+          return {
+            fighterA,
+            fighterB,
+            weightClass: fight.weightClass || fight.weight_class || fight.weight || 'Unknown',
+            eventName: eventObj.name,
+            eventId: eventObj.id
+          };
+        });
+      }
+      
+      processedEvents.push(eventObj);
+      console.log(`✅ Processed event: ${eventObj.name} with ${eventObj.fights.length} fights`);
+      
+    } catch (error) {
+      console.error('❌ Error processing event:', error, event);
+    }
+  }
+  
+  // Update global fighters list and populate dropdowns
+  allFighters = removeDuplicateFighters(allFightersList);
+  populateFighterDropdowns(allFighters);
+  
+  console.log('⚙️ Processing complete. Total fighters:', allFighters.length);
+  return processedEvents;
+}
+
+function renderEvents(events) {
+  console.log('🎯 Rendering events:', events.length);
+  const eventsContainer = document.getElementById('events-container');
+  
+  if (!eventsContainer) {
+    console.error('❌ Events container not found');
+    return;
+  }
+  
+  eventsContainer.innerHTML = '';
+  
+  if (events.length === 0) {
+    console.log('⚠️ No events to render');
+    eventsContainer.innerHTML = '<p class="no-events">No UFC events available</p>';
+    return;
+  }
+  
+  events.forEach(event => {
+    const eventCard = renderEvent(event);
+    eventsContainer.appendChild(eventCard);
+    console.log(`✅ Rendered event card: ${event.name}`);
+  });
+  
+  console.log(`✅ Successfully rendered ${events.length} events`);
+}
+
+function showLoadingState() {
+  const loadingState = document.getElementById('loading-state');
+  const emptyState = document.getElementById('empty-state');
+  const eventsContainer = document.getElementById('events-container');
+  
+  if (loadingState) loadingState.classList.remove('hidden');
+  if (emptyState) emptyState.classList.add('hidden');
+  if (eventsContainer) eventsContainer.innerHTML = '';
+}
+
+function hideLoadingState() {
+  const loadingState = document.getElementById('loading-state');
+  if (loadingState) loadingState.classList.add('hidden');
+}
+
+function showStatusBanner() {
+  const banner = document.getElementById('data-status-banner');
+  if (banner) {
+    banner.classList.remove('hidden');
+    console.log('🚩 Status banner shown: Live UFC data unavailable — showing fallback fights');
+  }
+}
+
+function hideStatusBanner() {
+  const banner = document.getElementById('data-status-banner');
+  if (banner) {
+    banner.classList.add('hidden');
+    console.log('🚩 Status banner hidden');
+  }
+}
+
+function showErrorState() {
+  hideLoadingState();
+  const emptyState = document.getElementById('empty-state');
+  const eventsContainer = document.getElementById('events-container');
+  
+  if (emptyState) {
+    emptyState.classList.remove('hidden');
+    emptyState.innerHTML = `
+      <p>Unable to load UFC events. Please try refreshing the page.</p>
+      <button class="btn btn-primary" onclick="fetchUpcomingEvents()">Try Again</button>
+    `;
+  }
+  
+  if (eventsContainer) eventsContainer.innerHTML = '';
+}
+
+async function refreshData() {
+  console.log('🔄 Refreshing data...');
+  refreshBtn.disabled = true;
+  
+  try {
+    await fetchUpcomingEvents();
+    console.log('✅ Data refreshed successfully');
+  } catch (error) {
+    console.error('❌ Refresh failed:', error);
   } finally {
     refreshBtn.disabled = false;
   }
@@ -1528,6 +2523,9 @@ document.addEventListener("DOMContentLoaded", () => {
   refreshBtn.addEventListener("click", () => {
     refreshData();
   });
+
+  // Initialize account system
+  initializeAccountSystem();
 
   // Initialize search functionality
   initializeFighterSearch();
@@ -1550,6 +2548,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // Load initial data
   refreshData();
   startAutoRefresh();
+  
+  // Initialize leaderboard with data
+  updateLeaderboard();
+  
+  // Resolve demo results periodically
+  setInterval(resolveDemoResults, 30000); // Check every 30 seconds
 });
 
 // Navigation functionality
